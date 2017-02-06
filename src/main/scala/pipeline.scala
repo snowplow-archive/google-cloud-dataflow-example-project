@@ -68,8 +68,7 @@ object MinimalWordCount {
      .apply(ParDo.named("ExtractWords").of(extractWords))
      .apply(Count.perElement[String]())
      .apply("FormatResults", MapElements.via(SimpleFunctionInstance))
-     .apply(TextIO.Write.to("gs://gcp-dataflow-example-bucket/out"))
-     //.apply(PubsubIO.Write.topic("test-output-topic"))
+     .apply(PubsubIO.Write.topic("projects/gcp-dataflow-example/topics/test-output-topic"))
 
     // Run the pipeline.
     p.run()
