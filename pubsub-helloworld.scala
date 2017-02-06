@@ -7,7 +7,7 @@ import com.google.cloud.pubsub.SubscriptionInfo;
 import com.google.cloud.pubsub.Message;
 
 object pubsubHelloWorld {
-	def main(args: Array[String]) {
+	def oldmain(args: Array[String]) {
 
 		// Instantiates a client with default authentication. 
 		//Requires $ gcloud beta auth application-default login
