@@ -36,8 +36,8 @@ import com.google.cloud.bigtable.dataflow.CloudBigtableScanConfiguration
 import com.google.cloud.bigtable.dataflow.CloudBigtableIO
 
 import org.apache.hadoop.hbase.client.{Mutation, Put}
-import org.apache.hadoop.hbase.io.HeapSize
-import org.apache.hadoop.hbase.CellScannable
+import org.apache.hadoop.hbase.io
+
 
 object MinimalWordCount {
 
