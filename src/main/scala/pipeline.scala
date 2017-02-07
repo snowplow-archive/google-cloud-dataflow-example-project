@@ -16,6 +16,10 @@
 
 package com.dataflow.example
 
+import java.lang.{Long => JLong}
+import java.io.ByteArrayOutputStream
+import java.io.ObjectOutputStream
+
 import com.google.cloud.dataflow.sdk.Pipeline
 import com.google.cloud.dataflow.sdk.io.TextIO
 import com.google.cloud.dataflow.sdk.io.PubsubIO
@@ -28,16 +32,20 @@ import com.google.cloud.dataflow.sdk.transforms.MapElements
 import com.google.cloud.dataflow.sdk.transforms.ParDo
 import com.google.cloud.dataflow.sdk.transforms.SimpleFunction
 import com.google.cloud.dataflow.sdk.values.KV
+import com.google.cloud.bigtable.dataflow.CloudBigtableScanConfiguration
+import com.google.cloud.bigtable.dataflow.CloudBigtableIO
 
-import java.lang.{Long => JLong}
+import org.apache.hadoop.hbase.client.{Mutation, Put}
+import org.apache.hadoop.hbase.io.HeapSize
+import org.apache.hadoop.hbase.CellScannable
 
 object MinimalWordCount {
-  
 
-  def SimpleFunctionInstance = new SimpleFunction[KV[String,JLong],String]() {
+  def formatToHBase = new DoFn[KV[String,JLong],Mutation]() {
     @Override
-    def apply(input: KV[String, JLong]) : String = {
-        input.getKey() + ": " + input.getValue()
+    def processElement(c: DoFn[KV[String,JLong],Mutation]#ProcessContext) {
+        c.output(new Put(c.element.getKey.getBytes)
+                    .addColumn("cf1".getBytes, "someQualifier".getBytes, (" "+c.element.getValue).getBytes))
     }
   }
 
@@ -52,25 +60,34 @@ object MinimalWordCount {
     }
   }
 
-
   def main(args: Array[String]) {
-    val options = PipelineOptionsFactory.fromArgs(args).withValidation().as(classOf[DataflowPipelineOptions])
 
+    // Config Bigtable
+    val config = new CloudBigtableScanConfiguration.Builder()
+    .withProjectId("gcp-dataflow-example")
+    .withInstanceId("gcp-dataflow-example-instance")
+    .withTableId("test-table")
+    .build
+
+    // Config Pipeline
+    val options = PipelineOptionsFactory.fromArgs(args).withValidation().as(classOf[DataflowPipelineOptions])
     options.setRunner(classOf[BlockingDataflowPipelineRunner])
     options.setProject("gcp-dataflow-example")
     options.setStagingLocation("gs://gcp-dataflow-example-bucket/staging")
 
     // Create the Pipeline object with the options we defined above.
     val p = Pipeline.create(options)
+    CloudBigtableIO.initializeForWrite(p)
 
     //p.apply(PubsubIO.Read.topic("test-input-topic"))
     p.apply(TextIO.Read.from("gs://dataflow-samples/shakespeare/*"))
      .apply(ParDo.named("ExtractWords").of(extractWords))
      .apply(Count.perElement[String]())
-     .apply("FormatResults", MapElements.via(SimpleFunctionInstance))
-     .apply(PubsubIO.Write.topic("projects/gcp-dataflow-example/topics/test-output-topic"))
+     .apply(ParDo.named("FormatToHBase").of(formatToHBase))
+     .apply(CloudBigtableIO.writeToTable(config))
+     //.apply(PubsubIO.Write.topic("projects/gcp-dataflow-example/topics/test-output-topic"))
 
     // Run the pipeline.
-    p.run()
+    p.run
   }
 }

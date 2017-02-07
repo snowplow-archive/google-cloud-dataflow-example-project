@@ -1,6 +1,10 @@
-name := "helloworld"
+name := "gcp-dataflow-example"
 version := "0.0.0"
 
-libraryDependencies += "com.google.cloud" % "google-cloud" % "0.8.1-alpha"
-libraryDependencies += "com.google.cloud" % "google-cloud-pubsub" % "0.8.1-alpha"
+libraryDependencies += "com.google.cloud"          % "google-cloud"                       % "0.8.1-alpha"
+libraryDependencies += "com.google.cloud"          % "google-cloud-pubsub"                % "0.8.1-alpha"
 libraryDependencies += "com.google.cloud.dataflow" % "google-cloud-dataflow-java-sdk-all" % "1.9.0"
+libraryDependencies += "com.google.cloud.bigtable" % "bigtable-hbase-dataflow"            % "0.9.4"
+libraryDependencies += "com.google.cloud.bigtable" % "bigtable-hbase-1.2"                 % "0.9.4"
+libraryDependencies += "org.apache.hbase"          % "hbase-client"                       % "1.3.0"
+libraryDependencies += "org.apache.hbase"          % "hbase-common"                       % "1.3.0"
