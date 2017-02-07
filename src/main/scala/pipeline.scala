@@ -79,13 +79,11 @@ object MinimalWordCount {
     val p = Pipeline.create(options)
     CloudBigtableIO.initializeForWrite(p)
 
-    //p.apply(PubsubIO.Read.topic("test-input-topic"))
-    p.apply(TextIO.Read.from("gs://dataflow-samples/shakespeare/*"))
+    p.apply(PubsubIO.Read.topic("test-input-topic"))
      .apply(ParDo.named("ExtractWords").of(extractWords))
      .apply(Count.perElement[String]())
      .apply(ParDo.named("FormatToHBase").of(formatToHBase))
      .apply(CloudBigtableIO.writeToTable(config))
-     //.apply(PubsubIO.Write.topic("projects/gcp-dataflow-example/topics/test-output-topic"))
 
     // Run the pipeline.
     p.run
