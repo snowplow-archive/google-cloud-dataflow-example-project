@@ -10,21 +10,10 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.spark.streaming
-
-// Spark
-
-import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import org.apache.spark.SparkConf
-import org.apache.spark.streaming._
-import org.apache.spark.streaming.kinesis.KinesisUtils
-
-// This project
-import storage.DynamoUtils
-import kinesis.{KinesisUtils => KU}
+package com.snowplowanalytics.dataflow.streaming
 
 /**
- * Core of the Spark Streaming Application
+ * Core of the Dataflow Streaming Application
  * 1. Configuration information is brought in from StreamingCountsApp.scala
  * 2. Object sets up Dataflow, PubSub and Bigtable
  * 3. Once connections are up, Dataflow StreamingCounts stream processing starts
@@ -35,55 +24,55 @@ import kinesis.{KinesisUtils => KU}
 object StreamingCounts {
 
   /**
-   * Private function to set up Spark Streaming
+   * Private function to set up Dataflow
    *
    * @param config The configuration for our job using StreamingCountsConfig.scala
    */
-  private def setupSparkContext(config: StreamingCountsConfig): StreamingContext = {
-    val streamingSparkContext = {
-      val sparkConf = new SparkConf().setAppName(config.appName).setMaster(config.master)
-      new StreamingContext(sparkConf, config.batchInterval)
+  private def setupDataflow(config: StreamingCountsConfig): StreamingContext = {
+    val dataflowPipeline = {
+        val options = PipelineOptionsFactory.fromArgs(args)
+                .withValidation().as(classOf[DataflowPipelineOptions])
+        options.setRunner(classOf[BlockingDataflowPipelineRunner])
+        options.setProject(config.project)
+        options.setStagingLocation(config.stagingPath)
+
+        // Create the Pipeline object with the options we defined above.
+        val p = Pipeline.create(options)
+        p
     }
-    streamingSparkContext
+    dataflowPipeline
   }
 
   /**
-   * Starts our processing of a single Kinesis stream.
+   * function applied in the "map" phase
+   */
+  def bucketEvents = new DoFn[String,(String,String)]() {
+    @Override
+    def processElement(c: DoFn[String,(String,String)]#ProcessContext) {
+        val e = SimpleEvent.fromJson(c.element)
+        c.output((e.bucket, e.`type`))
+    }
+  }
+  /**
+   * Starts our processing of a single Pub/Sub stream.
    * Never ends.
    *
    * @param config The configuration for our job using StreamingCountsConfig.scala
    */
   def execute(config: StreamingCountsConfig) {
+    // Config Bigtable
+    val bigTableConfig = new CloudBigtableScanConfiguration.Builder()
+    .withProjectId(config.project)
+    .withInstanceId(config.bigtable.instance)
+    .withTableId(config.bigtable.table)
+    .build
 
-    // setting up Spark Streaming connection to Kinesis
-    val kinesisClient = KU.setupKinesisClientConnection(config.endpointUrl, config.awsProfile)
-    require(kinesisClient != null,
-      "No AWS credentials found. Please specify credentials using one of the methods specified " +
-        "in http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/credentials.html")
+    val pipeline = setupDataflow(config)
 
-    // setting up Spark Streaming connection to DynamoDB
-    lazy val dynamoConnection = DynamoUtils.setupDynamoClientConnection(config.awsProfile)
-
-    val streamingSparkContext = setupSparkContext(config)
-    val numShards = KU.getShardCount(kinesisClient, config.streamName)
-    val sparkDStreams = (0 until numShards).map { i =>
-      KinesisUtils.createStream(
-        ssc = streamingSparkContext,
-        streamName = config.streamName,
-        endpointUrl = config.endpointUrl,
-        initialPositionInStream = config.initialPosition,
-        checkpointInterval = config.batchInterval,
-        storageLevel = config.storageLevel
-        )
-    }
-
-    // Map phase: union DStreams, derive events, determine bucket
-    val bucketedEvents = streamingSparkContext
-      .union(sparkDStreams)
-      .map { bytes =>
-        val e = SimpleEvent.fromJson(bytes)
-        (e.bucket, e.`type`)
-      }
+    // Map phase: derive events, determine bucket
+    val bucketedEvents = pipeline
+        .apply(PubsubIO.Read.topic(config.topic))
+        .apply(ParDo.named("BucketEvents").of(bucketEvents))
 
     // Reduce phase: group by key then by count
     val bucketedEventCounts = bucketedEvents

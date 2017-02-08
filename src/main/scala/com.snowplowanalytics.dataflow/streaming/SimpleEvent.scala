@@ -37,12 +37,11 @@ object SimpleEvent {
   def convertStringToDate(dateString: String): Date = format.parse(dateString)
 
   /**
-   * Converts PubSub ByteArray of JSON data into SimpleEvent objects
+   * Converts String of JSON data into SimpleEvent objects
    */
-  def fromJson(byteArray: Array[Byte]): SimpleEvent = {
+  def fromJson(jsonString: String): SimpleEvent = {
     implicit val formats = DefaultFormats
-    val newString = new String(byteArray, "UTF-8")
-    val parsed = parse(newString)
+    val parsed = parse(jsonString)
     parsed.extract[SimpleEvent]
   }
 
