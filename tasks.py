@@ -13,7 +13,9 @@ import datetime, json, uuid, time
 from functools import partial
 from random import choice
 
-from invoke import run, task
+#from invoke import run, task
+
+from google.cloud import pubsub
 
 
 JAR_FILE = "gcp-dataflow-example-project-0.0.0.jar"
@@ -37,36 +39,39 @@ def create_event():
   event_id = str(uuid.uuid4())
   color_choice = picker(COLORS)
 
-  return (event_id, {
+  return {
     "id": event_id,
     "timestamp": datetime.datetime.now().isoformat(),
     "type": color_choice()
-  })
+  }
 
-def write_event(conn, stream_name):
+def write_event(topic):
   """
   Returns the event and event event_payload
   """
-  event_id, event_payload = create_event()
+  event_payload = create_event()
   event_json = json.dumps(event_payload)
-  conn.put_record(stream_name, event_json, event_id)
+  topic.publish(bytes(event_json, "utf-8"))
   return event_json
 
 
-@task
-def generate_events(profile, region, stream):
+#@task
+def generate_events(topic_name):
     """
     load demo data with python generator script for SimpleEvents
     """
-    conn = kinesis.connect_to_region(region, profile_name=profile)
+    client = pubsub.Client()
+    topic = client.topic(topic_name)
+    assert topic.exists()
+
     while True:
-        event_json = write_event(conn, stream)
-        print "Event sent to Kinesis: {}".format(event_json)
+        event_json = write_event(topic)
+        print("Event sent to Pub/Sub: {}".format(event_json))
         #time.sleep(5)
 
 
-@task
-def build_project():
+#@task
+def build_project(foo):
     """
     build gcp-dataflow-example-project
     and package into "fat jar" ready for Dataflow deploy
@@ -74,30 +79,26 @@ def build_project():
     run("sbt assembly", pty=True)
 
 
-@task
-def set_project(project):
-    """
-    set the appropriate project 
-    """
-    pass
-
-
-@task
-def create_bigtable_table(project, region, table):
+#@task
+def create_bigtable_table(client, region, table):
     """
     Cloud Bigtable table creation 
     """
     pass
 
-@task
-def create_pubsub_topic(project, topic):
+#@task
+def create_pubsub_topic(topic_name):
     """
     create our pubsub topic
     """
-    pass
+    client = pubsub.Client()
+    topic = client.topic(topic_name)
+    assert not topic.exists()
+    topic.create()
+    assert topic.exists()
 
 
-@task
+#@task
 def run_project(config_path):
     """
     Submits the compiled "fat jar" to Cloud Dataflow and

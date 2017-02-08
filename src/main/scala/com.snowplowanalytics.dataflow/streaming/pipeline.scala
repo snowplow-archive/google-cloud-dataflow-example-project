@@ -45,7 +45,7 @@ object MinimalWordCount {
     @Override
     def processElement(c: DoFn[KV[String,JLong],Mutation]#ProcessContext) {
         c.output(new Put(c.element.getKey.getBytes)
-                    .addColumn("cf1".getBytes, "someQualifier".getBytes, (" "+c.element.getValue).getBytes))
+                    .addColumn("cf1".getBytes, "SimpleEvent".getBytes, (" "+c.element.getValue).getBytes))
     }
   }
 
@@ -79,7 +79,7 @@ object MinimalWordCount {
     val p = Pipeline.create(options)
     CloudBigtableIO.initializeForWrite(p)
 
-    p.apply(PubsubIO.Read.topic("test-input-topic"))
+    p.apply(PubsubIO.Read.topic("topic1"))
      .apply(ParDo.named("ExtractWords").of(extractWords))
      .apply(Count.perElement[String]())
      .apply(ParDo.named("FormatToHBase").of(formatToHBase))
