@@ -46,14 +46,33 @@ object StreamingCounts {
   /**
    * function applied in the "map" phase
    */
-  def bucketEvents = new DoFn[String,(String,String)]() {
+  def bucketEvents = new DoFn[String,KV[String,String]]() {
     @Override
-    def processElement(c: DoFn[String,(String,String)]#ProcessContext) {
+    def processElement(c: DoFn[String,KV[String,String]]#ProcessContext) {
         val e = SimpleEvent.fromJson(c.element)
-        c.output((e.bucket, e.`type`))
+        c.output(new KV[String,String](e.bucket, e.`type`))
     }
   }
+
+  def storeCounts = new DoFn[KV[String, KV[String, JLong]], PDone]() {
+    @Override
+    def processElement(c: DoFn[KV[String,KV[String, JLong]], PDone]#ProcessContext) {
+       c.output(new Put( 
+    }
+  }
+
+
   /**
+   * function applied to count the events per type in each bucket and 
+   * store the counts in Bigtable
+   */
+  def countBucketEvents = new DoFn[KV[String,Iterable[String]], PDone]() {
+    @Override
+    def processElement(c: DoFn[KV[String,Iterable[String]], PDone]#ProcessContext) {
+        val counts = c.element.getValue.apply(Count.perElement[String]())
+    }
+  } /**
+
    * Starts our processing of a single Pub/Sub stream.
    * Never ends.
    *
@@ -76,31 +95,14 @@ object StreamingCounts {
 
     // Reduce phase: group by key then by count
     val bucketedEventCounts = bucketedEvents
-      .groupByKey
-      .map { case (eventType, events) =>
-        val count = events.groupBy(identity).mapValues(_.size)
-        (eventType, count)
-      }
+        .apply(GroupByKey.[String, String]create)
+        .apply(ParDo.named("CountBucketEvents").of(countBucketEvents))
 
-    // Iterate over each aggregate record and save the record into DynamoDB
-    bucketedEventCounts.foreachRDD { rdd =>
-      rdd.foreach { case (bucket, aggregates) =>
-        aggregates.foreach { case (eventType, count) =>
-          DynamoUtils.setOrUpdateCount(
-            dynamoConnection,
-            config.tableName,
-            bucket.toString,
-            eventType,
-            DynamoUtils.timeNow(),
-            DynamoUtils.timeNow(),
-            count.toInt
-          )
-        }
-      }
-    }
+    // Save the records in Bigtable
+    bucketedEventCounts
+        .apply(CloudBigtableIO.writeToTable(bigTableConfig))
 
-    // Start Spark Streaming process
-    streamingSparkContext.start()
-    streamingSparkContext.awaitTermination()
+    // Start Dataflow pipeline
+    pipeline.run
   }
 }
