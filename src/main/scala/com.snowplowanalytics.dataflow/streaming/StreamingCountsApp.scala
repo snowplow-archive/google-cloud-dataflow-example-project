@@ -10,17 +10,12 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.spark.streaming
+package com.snowplowanalytics.dataflow.streaming
 
 // Java
 import java.io.File
 import java.io.FileReader
 import java.util.Properties
-
-// AWS libs
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
-import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration
 
 // Config
 import com.typesafe.config.{Config, ConfigFactory}
@@ -28,19 +23,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 // Argot
 import org.clapper.argot._
 
-// Spark
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.streaming.{Minutes, Seconds, Milliseconds}
 
 /**
- * The entry point class for the Spark Streaming Application.
+ * The entry point class for the Dataflow Streaming Application.
  *
- * Usage:
- *
- * spark/bin/spark-submit --class com.snowplowanalytics.spark.streaming.StreamingCountsApp \
- *                        --master local[2] \
- *                        spark-streaming-example-project/target/scala-2.10/spark-streaming-example-project-0.1.0.jar \
- *                        --config spark-streaming-example-project/src/main/resources/config.hocon.sample
 */
 object StreamingCountsApp {
 
@@ -78,16 +64,11 @@ object StreamingCountsApp {
 
     // create Spark Streaming Config from hocon file in resource directory
     val scc = StreamingCountsConfig(
-      region = conf.getConfig("kinesis").getString("region"),
-      streamName = conf.getConfig("kinesis").getString("streamName"),
-      checkpointInterval = Minutes(conf.getConfig("spark").getInt("checkpointInterval")),
-      initialPosition = InitialPositionInStream.LATEST,
-      storageLevel = StorageLevel.MEMORY_AND_DISK_2,
-      appName = conf.getConfig("spark").getString("appName"),
-      master = conf.getConfig("spark").getString("master"),
-      batchInterval =  Milliseconds(conf.getConfig("spark").getInt("batchInterval")),
-      tableName = conf.getConfig("dynamodb").getString("tableName"),
-      awsProfile = conf.getConfig("aws").getString("awsProfile")
+      projectId       = conf.getConfig("googlecloud").getString("projectId"),
+      instancId       = conf.getConfig("bigtable").getString("projectId"),
+      tableName       = conf.getConfig("bigtable").getString("tableName"),
+      stagingLocation = conf.getConfig("dataflow").getString("stagingLocation")
+      topicName       = conf.getConfig("cloudpubsub").getString("topic")
     )
 
     // start StreamingCounts application with config object

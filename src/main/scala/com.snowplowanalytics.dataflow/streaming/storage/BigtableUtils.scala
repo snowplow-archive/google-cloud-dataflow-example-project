@@ -54,29 +54,27 @@ object BigtableUtils {
 
 
   /**
-   * Function wraps admin setup
+   * Function wraps connection setup
    */
   def setupBigtableAdmin(projectId: String, instanceId): Connection = {
     val connection = BigtableConfiguration.connect(projectId, instanceId)
-    val admin = connection.getAdmin
-    connection
   }
 
 
   /**
    * Function wraps get or create item in Bigtable table
    */
-  def setOrUpdateCount(bigtableAdmin: Admin, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int){
+  def setOrUpdateCount(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int){
 
-    val rowInTable = getItem(bigtableAdmin: Admin, tableName, bucketStart, eventType)
+    val rowInTable = getItem(bigtableConnection, tableName, bucketStart, eventType)
     println(rowInTable)
     if (rowInTable == null) {
-      BigtableUtils.putItem(bigtableAdmin: Admin, tableName, bucketStart, eventType, createdAt, updatedAt, count)
+      BigtableUtils.putItem(bigtableConnection, tableName, bucketStart, eventType, createdAt, updatedAt, count)
     } else {
       val oldCreatedAt = String(rowInTable.getValue("cf1".getBytes, "CreatedAt".getBytes))
       val oldCount = String(rowInTable.getValue("cf1".getBytes, "Count")).toInt
       val newCount = oldCount + count.toInt
-      BigtableUtils.putItem(bigtableAdmin: Admin, tableName, bucketStart, eventType, oldCreatedAt, updatedAt, newCount)
+      BigtableUtils.putItem(bigtableConnection, tableName, bucketStart, eventType, oldCreatedAt, updatedAt, newCount)
     }
   }
 
@@ -84,9 +82,9 @@ object BigtableUtils {
   /**
    * Function wraps get row operation from Bigtable
    */
-  def getItem(bigtableAdmin: Admin, tableName: String, bucketStart: String, eventType: String): Result = {
+  def getItem(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String): Result = {
 
-    val table = bigtableAdmin.getConnection().getTable(TableName.valueOf(tableName))
+    val table = bigtableConnection.getTable(TableName.valueOf(tableName))
     Result getResult = table.get(new Get((bucketStart+":"+eventType).getBytes)
     getResult
   }
@@ -95,7 +93,7 @@ object BigtableUtils {
   /**
    * Function wraps Bigtable putItem operation
    */
-  def putItem(bigtableAdmin: Admin, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int) {
+  def putItem(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int) {
 
     // Row column names
     val tableEventTypeSecondaryKeyName = "EventType"
@@ -108,7 +106,7 @@ object BigtableUtils {
       val date = new Date()
       date.setTime(time)
       dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
-      val table = bigtableAdmin.getConnection().getTable(TableName.valueOf(tableName))
+      val table = bigtableConnection.getTable(TableName.valueOf(tableName))
       println("Adding data to " + tableName)
 
 

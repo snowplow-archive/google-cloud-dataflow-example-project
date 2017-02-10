@@ -1,40 +1,27 @@
-###################################
-#    Sample configuration for     #
-# spark-streaming-example-project #
-###################################
+###########################################
+#    Sample configuration for             #
+# gcp-dataflow-streaming-example-project  #
+###########################################
 
 
-kinesis {
+googlecloud {
 
-  streamName: "my-stream"
-
-  region: "us-east-1"
+  projectId: "my-stream"
 
 }
 
 
-spark {
+bigtable {
 
-  appName: "StreamingCountsApp"
-
-  checkpointInterval: 10 # Secs
-
-  master: "local[2]" # At least 2 threads
-
-  batchInterval: 2000 # Ms
-
-}
-
-
-dynamodb {
+  instanceId: "my-instance"
 
   tableName: "my-table"
 
 }
 
 
-aws {
+dataflow {
 
-  awsProfile: "default"
+  stagingLocation: "my-staging-location"
 
 }

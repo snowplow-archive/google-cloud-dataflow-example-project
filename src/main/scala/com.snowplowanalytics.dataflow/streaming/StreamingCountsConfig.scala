@@ -10,33 +10,15 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package com.snowplowanalytics.spark.streaming
-
-// AWS SDK
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream
-
-// Spark
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.streaming.Duration
+package com.snowplowanalytics.dataflow.streaming
 
 /**
  * Configuration object for our StreamingCounts job
  */
 case class StreamingCountsConfig(
-  region:             String,
-  streamName:         String,
-  checkpointInterval: Duration,
-  initialPosition:    InitialPositionInStream,
-  storageLevel:       StorageLevel,
-  appName:            String,
-  master:             String,
-  batchInterval:      Duration,
   tableName:          String,
-  awsProfile:         String
-) {
-
-  /**
-   * The Kinesis endpoint from the region.
-   */
-  val endpointUrl = s"https://kinesis.${region}.amazonaws.com"
-}
+  projectId:          String,
+  instanceId:         String,
+  stagingLocation:    String,
+  topicName:          String
+) 
