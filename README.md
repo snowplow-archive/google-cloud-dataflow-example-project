@@ -1,1 +1,1 @@
-# Scala + Google Cloud Pub/Sub Hello World
+# GCP Dataflow + PubSub example project
