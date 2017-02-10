@@ -16,43 +16,39 @@ import sbt._
 object Dependencies {
   val resolutionRepos = Seq(
     "Akka Repository" at "http://repo.akka.io/releases/",
-    "Spray Repository" at "http://repo.spray.cc/"
+    "Spray Repository" at "http://repo.spray.cc/",
+    "Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases"
+
   )
 
   object V {
     // Java
-    val googleCloud          = "0.8.1-alpha"
-    val gcpPubSub            = "0.8.1-alpha"
     val gcpDataflow          = "1.9.0"
-    val gcpBigtable          = "0.9.4"
-    val hbase                = "1.3.0"
-    val hadoop               = "1.2.1"
+    val gcpBigtable          = "0.9.5.1"
+    val hadoop               = "2.7.3"
+    val hbase                = "1.2.0"
+    val typesafe             = "1.3.1"
     // Scala
-    val argot                = "1.0.3"
+    val argot                = "1.0.4"
     // Add versions for your additional libraries here...
     // Scala (test)
-    val specs2               = "1.13"
-    val guava                = "11.0.1"
-    val json4s               = "3.2.10"
-
+    val specs2               = "3.3"
+    val guava                = "19.0"
+    val json4s               = "3.5.0"
   }
 
   object Libraries {
     // Java
-    val googleCloud           = "com.google.cloud"          %% "google-cloud"                       % V.googleCloud
-    val gcpPubSub             = "com.google.cloud"          %% "google-cloud-pubsub"                % V.googleCloud
-    val gcpDataflow           = "com.google.cloud.dataflow" %% "google-cloud-dataflow-java-sdk-all" % V.gcpDataflow
-    val gcpBigtableHBase      = "com.google.cloud.bigtable" %% "bigtable-hbase-1.2"                 % V.gcpBigtable
-    val gcpBigtableDataflow   = "com.google.cloud.bigtable" %% "bigtable-hbase-dataflow"            % V.gcpBigtable
-    //TODO: check if we really need all 3 of these hbase libraries
-    val hbase                 = "org.apache.hbase"          %% "hbase"                              % V.hbase
-    val hbaseCommon           = "org.apache.hbase"          %% "hbase-common"                       % V.hbase
-    val hbaseClient           = "org.apache.hbase"          %% "hbase-client"                       % V.hbase
-    val hadoop                = "org.apache.hadoop"         %% "hadoop-core"                        % V.hadoop
+    val gcpDataflow           = "com.google.cloud.dataflow" % "google-cloud-dataflow-java-sdk-all" % V.gcpDataflow
+    val gcpBigtableHBase      = "com.google.cloud.bigtable" % "bigtable-hbase-1.2"                 % V.gcpBigtable
+    val hadoop                = "org.apache.hadoop"         % "hadoop-common"                      % V.hadoop
+    val hbase                 = "org.apache.hbase"          % "hbase-common"                       % V.hbase
+    val hbaseClient           = "org.apache.hbase"          % "hbase-client"                       % V.hbase
+    val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
 
     // Scala
-    val argot                 = "org.clapper"               %% "argot"                              % V.argot
-    val json4s                = "org.json4s"                %% "json4s-jackson"                     % V.json4s
+    val argot                 = "org.clapper"               %% "argot"                             % V.argot
+    val json4s                = "org.json4s"                %% "json4s-jackson"                    % V.json4s
 
     // Scala (test only)
     val specs2                = "org.specs2"       % "specs2_2.10"                  % V.specs2       % "test"

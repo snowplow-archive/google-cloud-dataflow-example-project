@@ -5,23 +5,20 @@
 
 
 googlecloud {
-
-  projectId: "my-stream"
-
+  projectId: "gcp-dataflow-example-project"
 }
 
 
 bigtable {
-
-  instanceId: "my-instance"
-
-  tableName: "my-table"
-
+  instanceId: "test-instance"
+  tableName: "test-table"
 }
 
 
 dataflow {
+  stagingLocation: "gs://gcp-dataflow-example-project-bucket/staging"
+}
 
-  stagingLocation: "my-staging-location"
-
+cloudpubsub {
+ topic: "test-topic"
 }

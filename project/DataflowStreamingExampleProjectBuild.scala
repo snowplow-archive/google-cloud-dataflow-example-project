@@ -28,17 +28,14 @@ object DataflowStreamingExampleProjectBuild extends Build {
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
-        Libraries.googleCloud,
-        Libraries.gcpPubSub,
         Libraries.gcpDataflow,
         Libraries.gcpBigtableHBase,
-        Libraries.gcpBigtableDataflow,
         Libraries.hbase,
-        Libraries.hbaseCommon,
         Libraries.hbaseClient,
-        Libraries.hadoop,
         Libraries.argot,
-        Libraries.specs2
+        Libraries.specs2,
+        Libraries.json4s,
+        Libraries.typesafe
       )
     )
 }

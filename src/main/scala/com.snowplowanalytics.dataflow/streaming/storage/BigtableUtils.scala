@@ -19,18 +19,18 @@ import java.util.TimeZone
 import java.text.SimpleDateFormat
 
 //Bigtable
-import com.google.cloud.bigtable.hbase.BigtableConfiguration;
+import com.google.cloud.bigtable.hbase.BigtableConfiguration
 
 //HBase
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.Admin
+import org.apache.hadoop.hbase.client.Connection
+import org.apache.hadoop.hbase.client.Get
+import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.Result
+import org.apache.hadoop.hbase.client.Table
 
-import java.io.IOException;
+import java.io.IOException
 
 
 
@@ -56,13 +56,14 @@ object BigtableUtils {
   /**
    * Function wraps connection setup
    */
-  def setupBigtableAdmin(projectId: String, instanceId): Connection = {
+  def setupBigtable(projectId: String, instanceId: String): Connection = {
     val connection = BigtableConfiguration.connect(projectId, instanceId)
+    connection
   }
 
 
   /**
-   * Function wraps get or create item in Bigtable table
+   * Function wraps get or create item in Bigtable table. Assuming single column family, called 'cf1'
    */
   def setOrUpdateCount(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int){
 
@@ -71,8 +72,8 @@ object BigtableUtils {
     if (rowInTable == null) {
       BigtableUtils.putItem(bigtableConnection, tableName, bucketStart, eventType, createdAt, updatedAt, count)
     } else {
-      val oldCreatedAt = String(rowInTable.getValue("cf1".getBytes, "CreatedAt".getBytes))
-      val oldCount = String(rowInTable.getValue("cf1".getBytes, "Count")).toInt
+      val oldCreatedAt = new String(rowInTable.getValue("cf1".getBytes, "CreatedAt".getBytes))
+      val oldCount = new String(rowInTable.getValue("cf1".getBytes, "Count".getBytes)).toInt
       val newCount = oldCount + count.toInt
       BigtableUtils.putItem(bigtableConnection, tableName, bucketStart, eventType, oldCreatedAt, updatedAt, newCount)
     }
@@ -85,7 +86,7 @@ object BigtableUtils {
   def getItem(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String): Result = {
 
     val table = bigtableConnection.getTable(TableName.valueOf(tableName))
-    Result getResult = table.get(new Get((bucketStart+":"+eventType).getBytes)
+    val getResult = table.get(new Get((bucketStart+":"+eventType).getBytes))
     getResult
   }
 
@@ -96,10 +97,10 @@ object BigtableUtils {
   def putItem(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int) {
 
     // Row column names
-    val tableEventTypeSecondaryKeyName = "EventType"
-    val tableCreatedAtColumnName = "CreatedAt"
-    val tableUpdatedAtColumnName = "UpdatedAt"
-    val tableCountColumnName = "Count"
+    val tableEventTypeSecondaryKeyName = "EventType".getBytes
+    val tableCreatedAtColumnName = "CreatedAt".getBytes
+    val tableUpdatedAtColumnName = "UpdatedAt".getBytes
+    val tableCountColumnName = "Count".getBytes
 
     try {
       val time = new Date().getTime - (1 * 24 * 60 * 60 * 1000)
@@ -115,7 +116,7 @@ object BigtableUtils {
         .addColumn("cf1".getBytes, tableEventTypeSecondaryKeyName, eventType.getBytes)
         .addColumn("cf1".getBytes, tableCreatedAtColumnName, createdAt.getBytes)
         .addColumn("cf1".getBytes, tableUpdatedAtColumnName, updatedAt.getBytes)
-        .addColumn("cf1".getBytes, tableCountColumnName, count.getBytes)
+        .addColumn("cf1".getBytes, tableCountColumnName, (""+count).getBytes)
 
       // saving the data to Bigtable
       // println(item)

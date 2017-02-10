@@ -20,7 +20,7 @@ object BuildSettings {
     organization  := "com.snowplowanalytics",
     version       := "0.1.0",
     description   := "A Dataflow Streaming job reading events from Cloud Pub/Sub and writing event counts to Bigtable",
-    scalaVersion  := "2.10.4",
+    scalaVersion  := "2.11.2",
     scalacOptions :=  Seq("-deprecation", "-encoding", "utf8",
                           "-feature", "-target:jvm-1.7"),
     scalacOptions in Test :=  Seq("-Yrangepos"),
@@ -75,6 +75,22 @@ object BuildSettings {
         case x if x.endsWith("project.clj") => MergeStrategy.discard // Leiningen build files
         case x if x.startsWith("META-INF") => MergeStrategy.discard // More bumf
         case x if x.endsWith(".html") => MergeStrategy.discard
+       
+         
+        case x if x.contains("google") => MergeStrategy.last
+        case x if x.contains("bigtable") => MergeStrategy.last
+        case x if x.contains("activation") => MergeStrategy.last
+/*
+        case x if x.contains("AnnotationsProto") => MergeStrategy.last
+        case x if x.contains("HttpProto") => MergeStrategy.last
+        case x if x.contains("HttpRule") => MergeStrategy.last
+        case x if x.contains("BigtableInstanceAdmin") => MergeStrategy.last
+        case x if x.contains("BigtableTableAdmin") => MergeStrategy.last
+        case x if x.contains("Cluster") => MergeStrategy.last
+        case x if x.contains("Column") => MergeStrategy.last
+        case x if x.contains("CommonProto") => MergeStrategy.last
+        case x if x.contains("TableRequest") => MergeStrategy.last
+        case x if x.contains("InstanceRequest") => MergeStrategy.last*/
         case x => old(x)
       }
     }

@@ -64,10 +64,10 @@ object StreamingCountsApp {
 
     // create Spark Streaming Config from hocon file in resource directory
     val scc = StreamingCountsConfig(
-      projectId       = conf.getConfig("googlecloud").getString("projectId"),
-      instancId       = conf.getConfig("bigtable").getString("projectId"),
       tableName       = conf.getConfig("bigtable").getString("tableName"),
-      stagingLocation = conf.getConfig("dataflow").getString("stagingLocation")
+      projectId       = conf.getConfig("googlecloud").getString("projectId"),
+      instanceId      = conf.getConfig("bigtable").getString("projectId"),
+      stagingLocation = conf.getConfig("dataflow").getString("stagingLocation"),
       topicName       = conf.getConfig("cloudpubsub").getString("topic")
     )
 

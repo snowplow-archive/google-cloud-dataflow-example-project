@@ -23,10 +23,35 @@ package com.snowplowanalytics.dataflow.streaming
  */
 
 
+import java.lang.{Long => JLong, Iterable => JIterable}
+import scala.collection.JavaConverters._
 
-interface PipelineOptionsWithConnection extends PipelineOptions {
-    Connection getConnection()
-    void setConnection(Connection value)
+// Dataflow
+import com.google.cloud.dataflow.sdk.Pipeline
+import com.google.cloud.dataflow.sdk.io.PubsubIO
+import com.google.cloud.dataflow.sdk.options.DataflowPipelineOptions
+import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory
+import com.google.cloud.dataflow.sdk.runners.BlockingDataflowPipelineRunner
+import com.google.cloud.dataflow.sdk.transforms.Count
+import com.google.cloud.dataflow.sdk.transforms.DoFn
+import com.google.cloud.dataflow.sdk.transforms.ParDo
+import com.google.cloud.dataflow.sdk.transforms.GroupByKey
+import com.google.cloud.dataflow.sdk.transforms.Create
+import com.google.cloud.dataflow.sdk.transforms.Flatten
+import com.google.cloud.dataflow.sdk.values.KV
+import com.google.cloud.dataflow.sdk.values.PDone
+
+//HBase
+import org.apache.hadoop.hbase.client.Connection
+
+// This project
+import storage.BigtableUtils
+
+trait PipelineOptionsWithBigtable extends DataflowPipelineOptions {
+    def getConnection() : Connection
+    def setConnection(value: Connection) : Unit
+    def getTablename() : String
+    def setTablename(value: String) : Unit
 }
 
 object StreamingCounts {
@@ -39,14 +64,14 @@ object StreamingCounts {
   private def setupDataflow(config: StreamingCountsConfig): Pipeline = {
     val dataflowPipeline = {
 
-        PipelineOptionsFactory.register(java.lang.Class[PipelineOptionsWithConnection extends com.google.cloud.dataflow.sdk.options.PipelineOptions]) 
+        PipelineOptionsFactory.register(classOf[PipelineOptionsWithBigtable]) 
 
         //needed to access bigtable connection inside DoFn's
-        val bigtableConnection = BigtableConfiguration
+        val bigtableConnection = BigtableUtils
                 .setupBigtable(config.projectId, config.instanceId)
 
-        val options = PipelineOptionsFactory.
-                .as(classOf[PipelineOptionsWithConnection])
+        val options = PipelineOptionsFactory
+                .as(classOf[PipelineOptionsWithBigtable])
 
         options.setRunner(classOf[BlockingDataflowPipelineRunner])
         options.setProject(config.projectId)
@@ -67,54 +92,39 @@ object StreamingCounts {
     @Override
     def processElement(c: DoFn[String,KV[String,String]]#ProcessContext) {
         val e = SimpleEvent.fromJson(c.element)
-        c.output(new KV[String,String](e.bucket, e.`type`))
+        c.output(KV.of(e.bucket, e.`type`))
     }
   }
-
-
-  /**
-   * Store elements of PCollection in Bigtable. Elements are of the form: KV[bucket, KV[eventtype, count]]
-   */
-  def storeCounts = new DoFn[KV[String,KV[String, JLong]], PDone]() {
-    @Override
-    def processElement(c: DoFn[KV[String,KV[String, JLong]], PDone]#ProcessContext) {
-        val bucketName = c.element.getKey
-        val eventType = c.element.getValue.getKey
-        val count = c.element.getValue.getValue
-        val bigtableConnextion = DoFn.Contexti
-            .getPipelineOptions()
-            .as(classOf[PipelineOptionsWithConnection])
-
-        BigtableUtils.setOrUpdateCount(
-            bigtableConnection,
-            config.tableName,
-            bucketName,
-            eventType,
-            BigtableUtils.timeNow(),
-            BigtableUtils.timeNow(),
-            count.toInt
-        )
-    }
-  }
-
 
   /**
    * function applied to count the events per type in each bucket and 
    * store the counts in Bigtable
    */
-  def countBucketEvents = new DoFn[KV[String,Iterable[String]], PDone]() {
+  def storeEventCounts = new DoFn[KV[String,JIterable[String]], PDone]() {
     @Override
-    def processElement(c: DoFn[KV[String,Iterable[String]], PDone]#ProcessContext) {
+    def processElement(c: DoFn[KV[String,JIterable[String]], PDone]#ProcessContext) {
+        val bucketName = c.element.getKey
+        val bigtableConnection = c
+            .getPipelineOptions()
+            .as(classOf[PipelineOptionsWithBigtable])
+            .getConnection()
+        val tableName = c
+            .getPipelineOptions()
+            .as(classOf[PipelineOptionsWithBigtable])
+            .getTablename()
 
-        //produce a String PCollection from Iterable[String]
-        val flattened = c.element.getValue.apply(Flatten.FlattenIterables[String]())
-
-        //count string occurrences in String PCollection
-        val counts = flattened.apply(Count.perElement[String]())
-
-        //store counts in appropriate bucket -> KV[bucket , KV[eventType, count]]
-        val toStore = new KV[String, KV[String, JLong]](c.element.getKey, counts)
-        toStore.apply(ParDo.named("StoreCounts").of(storeCounts))
+        val counts = c.element.getValue.asScala.groupBy(identity).mapValues(_.size)
+        for ((eventType, count) <- counts) {
+            BigtableUtils.setOrUpdateCount(
+                bigtableConnection,
+                tableName,
+                bucketName,
+                eventType,
+                BigtableUtils.timeNow(),
+                BigtableUtils.timeNow(),
+                count 
+            )     
+        }
     }
   } /**
 
@@ -135,8 +145,8 @@ object StreamingCounts {
 
     // Reduce phase: group by key(bucket) then count and store
     val bucketedEventCounts = bucketedEvents
-        .apply(GroupByKey.[String, String]create)
-        .apply(ParDo.named("CountBucketEvents").of(countBucketEvents))
+        .apply(GroupByKey.create[String, String]())
+        .apply(ParDo.named("StoreEventCounts").of(storeEventCounts))
 
     // Start Dataflow pipeline
     pipeline.run
