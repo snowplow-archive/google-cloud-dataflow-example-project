@@ -28,7 +28,6 @@ object DataflowStreamingExampleProjectBuild extends Build {
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
-        Libraries.gcpDataflow,
         Libraries.gcpBigtableHBase,
         Libraries.hadoopCommon,
         Libraries.hbaseCommon,
@@ -36,7 +35,9 @@ object DataflowStreamingExampleProjectBuild extends Build {
         Libraries.specs2,
         Libraries.json4s,
         Libraries.typesafe,
-        Libraries.boringssl
+        Libraries.boringssl,
+        "org.mortbay.jetty.alpn" % "alpn-boot" % "8.1.5.v20150921",
+        "org.apache.tomcat" % "tomcat-jni" % "8.0.8"
       )
     )
 }

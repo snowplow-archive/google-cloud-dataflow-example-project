@@ -23,7 +23,12 @@ package com.snowplowanalytics.dataflow.streaming
  */
 
 
-import java.lang.{Long => JLong, Iterable => JIterable}
+import java.lang.{Iterable => JIterable, Long => JLong}
+
+import com.google.bigtable.repackaged.com.google.cloud.hbase.BigtableConfiguration
+
+import org.apache.hadoop.conf.Configuration
+
 import scala.collection.JavaConverters._
 
 // Dataflow
@@ -62,27 +67,39 @@ object StreamingCounts {
    * @param config The configuration for our job using StreamingCountsConfig.scala
    */
   private def setupDataflow(config: StreamingCountsConfig): Pipeline = {
-    val dataflowPipeline = {
+    PipelineOptionsFactory.register(classOf[PipelineOptionsWithBigtable])
 
-        PipelineOptionsFactory.register(classOf[PipelineOptionsWithBigtable]) 
+    //needed to access bigtable connection inside DoFn's
+    val config2 = new Configuration(false)
 
-        //needed to access bigtable connection inside DoFn's
-        val bigtableConnection = BigtableUtils
-                .setupBigtable(config.projectId, config.instanceId)
+    config2.set("google.bigtable.project.id", config.projectId)
+    config2.set("google.bigtable.instance.id", config.instanceId)
 
-        val options = PipelineOptionsFactory
-                .as(classOf[PipelineOptionsWithBigtable])
+    println(config.instanceId)
+    println(config.projectId)
 
-        options.setRunner(classOf[BlockingDataflowPipelineRunner])
-        options.setProject(config.projectId)
-        options.setStagingLocation(config.stagingLocation)
-        options.setConnection(bigtableConnection)
+    val options = PipelineOptionsFactory
+      .as(classOf[PipelineOptionsWithBigtable])
 
-        // Create the Pipeline object with the options we defined above.
-        val p = Pipeline.create(options)
-        p
-    }
-    dataflowPipeline
+    options.setRunner(classOf[BlockingDataflowPipelineRunner])
+    options.setProject(config.projectId)
+    options.setStagingLocation(config.stagingLocation)
+
+    // Problem here!
+    // Reflection finds constructor of com.google.cloud.bigtable.hbase1_2.BigtableConnection and invokes it
+    // This constuctor supposed to accept Hadoop Configuration
+    // And there is such constructor
+    // Which builds Builder and uses setInstanceId method, which does not exist!!!
+    // Also there's two Builder classes with equal full path, but one has, another doesn't have method
+    // https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/master/bigtable-hbase-parent/bigtable-hbase/src/main/java/com/google/cloud/bigtable/hbase/BigtableOptionsFactory.java
+//    println(classOf[Builder].getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
+
+    val bigtableConnection = BigtableConfiguration.connect(config2)
+
+    options.setConnection(bigtableConnection)
+
+    // Create the Pipeline object with the options we defined above.
+    Pipeline.create(options)
   }
 
   /**
@@ -109,7 +126,7 @@ object StreamingCounts {
             .as(classOf[PipelineOptionsWithBigtable])
             .getConnection()
         val tableName = c
-            .getPipelineOptions()
+            .getPipelineOptions
             .as(classOf[PipelineOptionsWithBigtable])
             .getTablename()
 

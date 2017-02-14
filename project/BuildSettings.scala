@@ -20,11 +20,14 @@ object BuildSettings {
     organization  := "com.snowplowanalytics",
     version       := "0.1.0",
     description   := "A Dataflow Streaming job reading events from Cloud Pub/Sub and writing event counts to Bigtable",
-    scalaVersion  := "2.11.2",
+    scalaVersion  := "2.11.8",
     scalacOptions :=  Seq("-deprecation", "-encoding", "utf8",
-                          "-feature", "-target:jvm-1.7"),
+                          "-feature", "-target:jvm-1.8"),
     scalacOptions in Test :=  Seq("-Yrangepos"),
-    resolvers     ++= Dependencies.resolutionRepos
+    resolvers     ++= Dependencies.resolutionRepos,
+
+    javaOptions in run += "-Xbootclasspath/p:/Users/chuwy/.ivy2/cache/org.mortbay.jetty.alpn/alpn-boot/jars/alpn-boot-8.1.5.v20150921.jar",
+    fork in run := true
   )
 
   // Makes our SBT app settings available from within the app
