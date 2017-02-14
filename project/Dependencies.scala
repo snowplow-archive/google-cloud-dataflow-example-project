@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2017 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -35,7 +35,7 @@ object Dependencies {
     val specs2               = "3.3"
     val guava                = "19.0"
     val json4s               = "3.5.0"
-    val boringssl            = "1.1.33.Fork19"
+    val alpn                 = "8.1.11.v20170118"
   }
 
   object Libraries {
@@ -46,7 +46,7 @@ object Dependencies {
     val hbaseCommon           = "org.apache.hbase"          % "hbase-common"                       % V.hbase
     val hbaseClient           = "org.apache.hbase"          % "hbase-client"                       % V.hbase
     val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
-    val boringssl             = "io.netty"                  % "netty-tcnative-boringssl-static"    % V.boringssl
+    val alpn                  = "org.mortbay.jetty.alpn" % "alpn-boot" % V.alpn
 
     // Scala
     val argot                 = "org.clapper"               %% "argot"                             % V.argot

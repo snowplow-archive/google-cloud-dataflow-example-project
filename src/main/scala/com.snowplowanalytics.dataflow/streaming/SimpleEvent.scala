@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2017 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -53,7 +53,7 @@ object SimpleEvent {
  *      (see BucketingStrategy.scala file for more details)
  *   2. A simple model of colors for this EventType:
  *      'Red','Orange','Yellow','Green', or 'Blue'
- *   example log: {"timestamp": "2015-06-05T13:00:22.540374", "type": "Orange", "id": "018dd633-f4c3-4599-9b44-ebf71a1c519f"}
+ *   example log: {"timestamp": "2017-06-05T13:00:22.540374", "type": "Orange", "id": "018dd633-f4c3-4599-9b44-ebf71a1c519f"}
  */
 case class SimpleEvent(id: String, timestamp: String, `type`: String) {
 

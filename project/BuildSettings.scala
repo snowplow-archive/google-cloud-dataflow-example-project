@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2017 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -20,7 +20,7 @@ object BuildSettings {
     organization  := "com.snowplowanalytics",
     version       := "0.1.0",
     description   := "A Dataflow Streaming job reading events from Cloud Pub/Sub and writing event counts to Bigtable",
-    scalaVersion  := "2.11.2",
+    scalaVersion  := "2.11.8",
     scalacOptions :=  Seq("-deprecation", "-encoding", "utf8",
                           "-feature", "-target:jvm-1.7"),
     scalacOptions in Test :=  Seq("-Yrangepos"),

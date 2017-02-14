@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Snowplow Analytics Ltd. All rights reserved.
+ * Copyright (c) 2017 Snowplow Analytics Ltd. All rights reserved.
  *
  * This program is licensed to you under the Apache License Version 2.0,
  * and you may not use this file except in compliance with the Apache License Version 2.0.
@@ -36,7 +36,7 @@ object StreamingCountsApp {
     val parser = new ArgotParser(
       programName = "generated",
       compactUsage = true,
-      preUsage = Some("%s: Version %s. Copyright (c) 2015, %s.".format(
+      preUsage = Some("%s: Version %s. Copyright (c) 2017, %s.".format(
         generated.Settings.name,
         generated.Settings.version,
         generated.Settings.organization)
