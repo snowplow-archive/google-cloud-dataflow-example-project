@@ -66,7 +66,7 @@ object StreamingCountsApp {
     val scc = StreamingCountsConfig(
       tableName       = conf.getConfig("bigtable").getString("tableName"),
       projectId       = conf.getConfig("googlecloud").getString("projectId"),
-      instanceId      = conf.getConfig("bigtable").getString("projectId"),
+      instanceId      = conf.getConfig("bigtable").getString("instanceId"),
       stagingLocation = conf.getConfig("dataflow").getString("stagingLocation"),
       topicName       = conf.getConfig("cloudpubsub").getString("topic")
     )

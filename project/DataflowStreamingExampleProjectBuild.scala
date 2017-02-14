@@ -30,12 +30,13 @@ object DataflowStreamingExampleProjectBuild extends Build {
       libraryDependencies ++= Seq(
         Libraries.gcpDataflow,
         Libraries.gcpBigtableHBase,
-        Libraries.hbase,
-        Libraries.hbaseClient,
+        Libraries.hadoopCommon,
+        Libraries.hbaseCommon,
         Libraries.argot,
         Libraries.specs2,
         Libraries.json4s,
-        Libraries.typesafe
+        Libraries.typesafe,
+        Libraries.boringssl
       )
     )
 }

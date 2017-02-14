@@ -64,7 +64,11 @@ object BuildSettings {
         "hadoop-tools-0.20.2.jar",
         "guava-14.0.1.jar", // conflict spark-network-common_2.10-1.3.0.jar
         "jcl-over-slf4j-1.7.10.jar", //conflict commons-logging-1.1.3.jar
-        "hadoop-yarn-api-2.2.0.jar"
+        "hadoop-yarn-api-2.2.0.jar",
+        "bigtable-protos-0.3.0.jar", //conflict grpc-core-proto-0.0.3.jar
+        "datastore-v1-protos-1.0.1.jar", //conflict grpc-core-proto-0.0.3.jar
+        "appengine-api-1.0-sdk-1.9.34.jar", 
+        "guava-jdk5-17.0.jar"
       )
       cp filter { jar => excludes(jar.data.getName) }
     },
@@ -75,22 +79,13 @@ object BuildSettings {
         case x if x.endsWith("project.clj") => MergeStrategy.discard // Leiningen build files
         case x if x.startsWith("META-INF") => MergeStrategy.discard // More bumf
         case x if x.endsWith(".html") => MergeStrategy.discard
+
+        case x if x.startsWith("com/google/cloud/bigtable/") => MergeStrategy.last
+        case x if x.startsWith("com/google/longrunning/") => MergeStrategy.last
+        case x if x.startsWith("com/google/rpc/") => MergeStrategy.last
+        case x if x.startsWith("com/google/type/") => MergeStrategy.last
+        case x if x.startsWith("google/protobuf/") => MergeStrategy.last
        
-         
-        case x if x.contains("google") => MergeStrategy.last
-        case x if x.contains("bigtable") => MergeStrategy.last
-        case x if x.contains("activation") => MergeStrategy.last
-/*
-        case x if x.contains("AnnotationsProto") => MergeStrategy.last
-        case x if x.contains("HttpProto") => MergeStrategy.last
-        case x if x.contains("HttpRule") => MergeStrategy.last
-        case x if x.contains("BigtableInstanceAdmin") => MergeStrategy.last
-        case x if x.contains("BigtableTableAdmin") => MergeStrategy.last
-        case x if x.contains("Cluster") => MergeStrategy.last
-        case x if x.contains("Column") => MergeStrategy.last
-        case x if x.contains("CommonProto") => MergeStrategy.last
-        case x if x.contains("TableRequest") => MergeStrategy.last
-        case x if x.contains("InstanceRequest") => MergeStrategy.last*/
         case x => old(x)
       }
     }

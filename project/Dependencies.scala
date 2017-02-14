@@ -24,9 +24,9 @@ object Dependencies {
   object V {
     // Java
     val gcpDataflow          = "1.9.0"
-    val gcpBigtable          = "0.9.5.1"
+    val gcpBigtable          = "0.9.1"
     val hadoop               = "2.7.3"
-    val hbase                = "1.2.0"
+    val hbase                = "1.2.1"
     val typesafe             = "1.3.1"
     // Scala
     val argot                = "1.0.4"
@@ -35,16 +35,18 @@ object Dependencies {
     val specs2               = "3.3"
     val guava                = "19.0"
     val json4s               = "3.5.0"
+    val boringssl            = "1.1.33.Fork19"
   }
 
   object Libraries {
     // Java
     val gcpDataflow           = "com.google.cloud.dataflow" % "google-cloud-dataflow-java-sdk-all" % V.gcpDataflow
     val gcpBigtableHBase      = "com.google.cloud.bigtable" % "bigtable-hbase-1.2"                 % V.gcpBigtable
-    val hadoop                = "org.apache.hadoop"         % "hadoop-common"                      % V.hadoop
-    val hbase                 = "org.apache.hbase"          % "hbase-common"                       % V.hbase
+    val hadoopCommon          = "org.apache.hadoop"         % "hadoop-common"                      % V.hadoop
+    val hbaseCommon           = "org.apache.hbase"          % "hbase-common"                       % V.hbase
     val hbaseClient           = "org.apache.hbase"          % "hbase-client"                       % V.hbase
     val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
+    val boringssl             = "io.netty"                  % "netty-tcnative-boringssl-static"    % V.boringssl
 
     // Scala
     val argot                 = "org.clapper"               %% "argot"                             % V.argot
