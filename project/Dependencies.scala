@@ -36,7 +36,7 @@ object Dependencies {
     val specs2               = "3.3"
     val guava                = "19.0"
     val json4s               = "3.5.0"
-    val alpn                 = "8.1.11.v20150921"
+    val alpn                 = "8.1.5.v20150921"
     val boringssl            = "1.1.33.Fork26"
     val tomcat               = "8.0.8"
   }
@@ -50,6 +50,7 @@ object Dependencies {
     val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
     val alpn                  = "org.mortbay.jetty.alpn"    % "alpn-boot"                          % V.alpn
     val tomcat                = "org.apache.tomcat"         % "tomcat-jni"                         % V.tomcat
+    val boringssl             = "io.netty"                  % "netty-tcnative-boringssl-static"    % V.boringssl
 
     // Scala
     val argot                 = "org.clapper"               %% "argot"                             % V.argot
