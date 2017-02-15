@@ -35,7 +35,7 @@ object DataflowStreamingExampleProjectBuild extends Build {
         Libraries.specs2,
         Libraries.json4s,
         Libraries.alpn,
-        Libraries.typesafe
+        Libraries.typesafe,
         Libraries.boringssl,
         Libraries.tomcat
       )
