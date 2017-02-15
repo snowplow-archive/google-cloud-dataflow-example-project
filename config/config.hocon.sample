@@ -5,7 +5,7 @@
 
 
 googlecloud {
-  projectId: "gcp-dataflow-example-project"
+  projectId: "engineering-sandbox"
 }
 
 
@@ -16,9 +16,11 @@ bigtable {
 
 
 dataflow {
-  stagingLocation: "gs://gcp-dataflow-example-project-bucket/staging"
+  stagingLocation: "gs://staging-dataflow-example-project/staging"
 }
 
+
+# in the form: projects/<project_id>/topics/<topic_name>
 cloudpubsub {
- topic: "test-topic"
+ topic: "projects/engineering-sandbox/topics/test-topic"
 }

@@ -25,26 +25,28 @@ package com.snowplowanalytics.dataflow.streaming
 
 import java.lang.{Iterable => JIterable, Long => JLong}
 
-import com.google.bigtable.repackaged.com.google.cloud.hbase.BigtableConfiguration
-
-import org.apache.hadoop.conf.Configuration
-
 import scala.collection.JavaConverters._
+
+import org.joda.time.Duration
 
 // Dataflow
 import com.google.cloud.dataflow.sdk.Pipeline
 import com.google.cloud.dataflow.sdk.io.PubsubIO
 import com.google.cloud.dataflow.sdk.options.DataflowPipelineOptions
 import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory
-import com.google.cloud.dataflow.sdk.runners.BlockingDataflowPipelineRunner
-import com.google.cloud.dataflow.sdk.transforms.Count
+import com.google.cloud.dataflow.sdk.runners.DataflowPipelineRunner
 import com.google.cloud.dataflow.sdk.transforms.DoFn
 import com.google.cloud.dataflow.sdk.transforms.ParDo
 import com.google.cloud.dataflow.sdk.transforms.GroupByKey
-import com.google.cloud.dataflow.sdk.transforms.Create
-import com.google.cloud.dataflow.sdk.transforms.Flatten
+import com.google.cloud.dataflow.sdk.transforms.windowing.FixedWindows
+import com.google.cloud.dataflow.sdk.transforms.windowing.Window
 import com.google.cloud.dataflow.sdk.values.KV
 import com.google.cloud.dataflow.sdk.values.PDone
+
+// Bigtable
+import com.google.cloud.bigtable.dataflow.AbstractCloudBigtableTableDoFn
+import com.google.cloud.bigtable.dataflow.CloudBigtableTableConfiguration
+import com.google.cloud.bigtable.dataflow.CloudBigtableTableConfiguration.Builder
 
 //HBase
 import org.apache.hadoop.hbase.client.Connection
@@ -53,8 +55,6 @@ import org.apache.hadoop.hbase.client.Connection
 import storage.BigtableUtils
 
 trait PipelineOptionsWithBigtable extends DataflowPipelineOptions {
-    def getConnection() : Connection
-    def setConnection(value: Connection) : Unit
     def getTablename() : String
     def setTablename(value: String) : Unit
 }
@@ -62,44 +62,30 @@ trait PipelineOptionsWithBigtable extends DataflowPipelineOptions {
 object StreamingCounts {
 
   /**
-   * Private function to set up Dataflow
+   * Private function to set up Dataflow and Bigtable
    *
    * @param config The configuration for our job using StreamingCountsConfig.scala
    */
-  private def setupDataflow(config: StreamingCountsConfig): Pipeline = {
+  private def setupDataflowAndBigtable(config: StreamingCountsConfig): (Pipeline, CloudBigtableTableConfiguration) = {
     PipelineOptionsFactory.register(classOf[PipelineOptionsWithBigtable])
-
-    //needed to access bigtable connection inside DoFn's
-    val config2 = new Configuration(false)
-
-    config2.set("google.bigtable.project.id", config.projectId)
-    config2.set("google.bigtable.instance.id", config.instanceId)
-
-    println(config.instanceId)
-    println(config.projectId)
 
     val options = PipelineOptionsFactory
       .as(classOf[PipelineOptionsWithBigtable])
 
-    options.setRunner(classOf[BlockingDataflowPipelineRunner])
+    options.setRunner(classOf[DataflowPipelineRunner])
     options.setProject(config.projectId)
     options.setStagingLocation(config.stagingLocation)
+    options.setStreaming(true)
 
-    // Problem here!
-    // Reflection finds constructor of com.google.cloud.bigtable.hbase1_2.BigtableConnection and invokes it
-    // This constuctor supposed to accept Hadoop Configuration
-    // And there is such constructor
-    // Which builds Builder and uses setInstanceId method, which does not exist!!!
-    // Also there's two Builder classes with equal full path, but one has, another doesn't have method
-    // https://github.com/GoogleCloudPlatform/cloud-bigtable-client/blob/master/bigtable-hbase-parent/bigtable-hbase/src/main/java/com/google/cloud/bigtable/hbase/BigtableOptionsFactory.java
-//    println(classOf[Builder].getProtectionDomain().getCodeSource().getLocation().toURI().getPath())
+    val bigtableConfig = new CloudBigtableTableConfiguration.Builder()
+        .withProjectId(config.projectId)
+        .withInstanceId(config.instanceId)
+        .withTableId(config.tableName)
+        .build()
 
-    val bigtableConnection = BigtableConfiguration.connect(config2)
+    val pipeline = Pipeline.create(options)
 
-    options.setConnection(bigtableConnection)
-
-    // Create the Pipeline object with the options we defined above.
-    Pipeline.create(options)
+    (pipeline, bigtableConfig)
   }
 
   /**
@@ -117,14 +103,11 @@ object StreamingCounts {
    * function applied to count the events per type in each bucket and 
    * store the counts in Bigtable
    */
-  def storeEventCounts = new DoFn[KV[String,JIterable[String]], PDone]() {
+
+  def storeEventCounts(config: CloudBigtableTableConfiguration) = new AbstractCloudBigtableTableDoFn[KV[String,JIterable[String]], PDone](config) {
     @Override
     def processElement(c: DoFn[KV[String,JIterable[String]], PDone]#ProcessContext) {
         val bucketName = c.element.getKey
-        val bigtableConnection = c
-            .getPipelineOptions()
-            .as(classOf[PipelineOptionsWithBigtable])
-            .getConnection()
         val tableName = c
             .getPipelineOptions
             .as(classOf[PipelineOptionsWithBigtable])
@@ -133,7 +116,7 @@ object StreamingCounts {
         val counts = c.element.getValue.asScala.groupBy(identity).mapValues(_.size)
         for ((eventType, count) <- counts) {
             BigtableUtils.setOrUpdateCount(
-                bigtableConnection,
+                getConnection,
                 tableName,
                 bucketName,
                 eventType,
@@ -153,17 +136,18 @@ object StreamingCounts {
   def execute(config: StreamingCountsConfig) {
     // Config Bigtable
 
-    val pipeline = setupDataflow(config)
+    val (pipeline, bigtableConfig) = setupDataflowAndBigtable(config)
 
     // Map phase: derive events, determine bucket
     val bucketedEvents = pipeline
         .apply(PubsubIO.Read.topic(config.topicName))
         .apply(ParDo.named("BucketEvents").of(bucketEvents))
+        .apply(Window.into[KV[String,String]](FixedWindows.of(Duration.standardMinutes(1))))
 
     // Reduce phase: group by key(bucket) then count and store
     val bucketedEventCounts = bucketedEvents
         .apply(GroupByKey.create[String, String]())
-        .apply(ParDo.named("StoreEventCounts").of(storeEventCounts))
+        .apply(ParDo.named("StoreEventCounts").of(storeEventCounts(bigtableConfig)))
 
     // Start Dataflow pipeline
     pipeline.run
