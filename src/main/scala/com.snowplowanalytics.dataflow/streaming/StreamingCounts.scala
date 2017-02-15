@@ -37,11 +37,13 @@ import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory
 import com.google.cloud.dataflow.sdk.runners.DataflowPipelineRunner
 import com.google.cloud.dataflow.sdk.transforms.DoFn
 import com.google.cloud.dataflow.sdk.transforms.ParDo
+import com.google.cloud.dataflow.sdk.transforms.PTransform
 import com.google.cloud.dataflow.sdk.transforms.GroupByKey
 import com.google.cloud.dataflow.sdk.transforms.windowing.FixedWindows
 import com.google.cloud.dataflow.sdk.transforms.windowing.Window
 import com.google.cloud.dataflow.sdk.values.KV
 import com.google.cloud.dataflow.sdk.values.PDone
+import com.google.cloud.dataflow.sdk.values.PCollection
 
 // Bigtable
 import com.google.cloud.bigtable.dataflow.AbstractCloudBigtableTableDoFn
@@ -92,41 +94,55 @@ object StreamingCounts {
    * function applied in the "map" phase
    */
   def bucketEvents = new DoFn[String,KV[String,String]]() {
-    @Override
-    def processElement(c: DoFn[String,KV[String,String]]#ProcessContext) {
+    
+    override def processElement(c: DoFn[String,KV[String,String]]#ProcessContext) {
+        println(c.element)
         val e = SimpleEvent.fromJson(c.element)
         c.output(KV.of(e.bucket, e.`type`))
     }
   }
 
   /**
-   * function applied to count the events per type in each bucket and 
+   * transform applied to count the events per type in each bucket and 
    * store the counts in Bigtable
    */
 
-  def storeEventCounts(config: CloudBigtableTableConfiguration) = new AbstractCloudBigtableTableDoFn[KV[String,JIterable[String]], PDone](config) {
-    @Override
-    def processElement(c: DoFn[KV[String,JIterable[String]], PDone]#ProcessContext) {
-        val bucketName = c.element.getKey
-        val tableName = c
-            .getPipelineOptions
-            .as(classOf[PipelineOptionsWithBigtable])
-            .getTablename()
+  class StoreEventCounts(config: CloudBigtableTableConfiguration) 
+            extends PTransform[PCollection[KV[String, JIterable[String]]], PDone] {
 
-        val counts = c.element.getValue.asScala.groupBy(identity).mapValues(_.size)
-        for ((eventType, count) <- counts) {
-            BigtableUtils.setOrUpdateCount(
-                getConnection,
-                tableName,
-                bucketName,
-                eventType,
-                BigtableUtils.timeNow(),
-                BigtableUtils.timeNow(),
-                count 
-            )     
-        }
+    def storeEventCounts(config: CloudBigtableTableConfiguration) = new AbstractCloudBigtableTableDoFn[KV[String,JIterable[String]], String](config) {
+
+      override def processElement(c: DoFn[KV[String,JIterable[String]], String]#ProcessContext) {
+          val bucketName = c.element.getKey
+          val tableName = c
+              .getPipelineOptions
+              .as(classOf[PipelineOptionsWithBigtable])
+              .getTablename()
+
+          val counts = c.element.getValue.asScala.groupBy(identity).mapValues(_.size)
+          for ((eventType, count) <- counts) {
+              BigtableUtils.setOrUpdateCount(
+                  getConnection,
+                  tableName,
+                  bucketName,
+                  eventType,
+                  BigtableUtils.timeNow(),
+                  BigtableUtils.timeNow(),
+                  count 
+              )     
+          }
+          c.output("dummy output")
+      }
+    } 
+
+    override def apply(counts : PCollection[KV[String, JIterable[String]]]) : PDone = {
+        counts.apply(ParDo.named("StoreEventCounts").of(this.storeEventCounts(config)))
+        PDone.in(counts.getPipeline)
     }
-  } /**
+  }
+
+
+/**
 
    * Starts our processing of a single Pub/Sub stream.
    * Never ends.
@@ -147,7 +163,7 @@ object StreamingCounts {
     // Reduce phase: group by key(bucket) then count and store
     val bucketedEventCounts = bucketedEvents
         .apply(GroupByKey.create[String, String]())
-        .apply(ParDo.named("StoreEventCounts").of(storeEventCounts(bigtableConfig)))
+        .apply(new StoreEventCounts(bigtableConfig))
 
     // Start Dataflow pipeline
     pipeline.run
