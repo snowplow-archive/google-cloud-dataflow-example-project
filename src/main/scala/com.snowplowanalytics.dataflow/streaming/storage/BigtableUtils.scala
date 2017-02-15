@@ -18,8 +18,6 @@ import java.util.Date
 import java.util.TimeZone
 import java.text.SimpleDateFormat
 
-//Bigtable
-import com.google.cloud.bigtable.hbase.BigtableConfiguration
 
 //HBase
 import org.apache.hadoop.hbase.TableName
@@ -50,15 +48,6 @@ object BigtableUtils {
   def timeNow(): String = {
     dateFormatter.setTimeZone(timezone)
     dateFormatter.format(new Date())
-  }
-
-
-  /**
-   * Function wraps connection setup
-   */
-  def setupBigtable(projectId: String, instanceId: String): Connection = {
-    val connection = BigtableConfiguration.connect(projectId, instanceId)
-    connection
   }
 
 

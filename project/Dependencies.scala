@@ -24,10 +24,11 @@ object Dependencies {
   object V {
     // Java
     val gcpDataflow          = "1.9.0"
-    val gcpBigtable          = "0.9.1"
+    val gcpBigtable          = "0.9.4"
     val hadoop               = "2.7.3"
-    val hbase                = "1.2.1"
+    val hbase                = "1.2.4"
     val typesafe             = "1.3.1"
+
     // Scala
     val argot                = "1.0.4"
     // Add versions for your additional libraries here...
@@ -35,18 +36,20 @@ object Dependencies {
     val specs2               = "3.3"
     val guava                = "19.0"
     val json4s               = "3.5.0"
-    val alpn                 = "8.1.11.v20170118"
+    val alpn                 = "8.1.11.v20150921"
+    val boringssl            = "1.1.33.Fork26"
+    val tomcat               = "8.0.8"
   }
 
   object Libraries {
     // Java
-    val gcpDataflow           = "com.google.cloud.dataflow" % "google-cloud-dataflow-java-sdk-all" % V.gcpDataflow
-    val gcpBigtableHBase      = "com.google.cloud.bigtable" % "bigtable-hbase-1.2"                 % V.gcpBigtable
+    val gcpBigtableHBase      = "com.google.cloud.bigtable" % "bigtable-hbase-dataflow"            % V.gcpBigtable
     val hadoopCommon          = "org.apache.hadoop"         % "hadoop-common"                      % V.hadoop
     val hbaseCommon           = "org.apache.hbase"          % "hbase-common"                       % V.hbase
     val hbaseClient           = "org.apache.hbase"          % "hbase-client"                       % V.hbase
     val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
-    val alpn                  = "org.mortbay.jetty.alpn" % "alpn-boot" % V.alpn
+    val alpn                  = "org.mortbay.jetty.alpn"    % "alpn-boot"                          % V.alpn
+    val tomcat                = "org.apache.tomcat"         % "tomcat-jni"                         % V.tomcat
 
     // Scala
     val argot                 = "org.clapper"               %% "argot"                             % V.argot

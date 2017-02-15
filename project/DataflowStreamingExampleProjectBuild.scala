@@ -28,7 +28,6 @@ object DataflowStreamingExampleProjectBuild extends Build {
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
-        Libraries.gcpDataflow,
         Libraries.gcpBigtableHBase,
         Libraries.hadoopCommon,
         Libraries.hbaseCommon,
@@ -37,6 +36,8 @@ object DataflowStreamingExampleProjectBuild extends Build {
         Libraries.json4s,
         Libraries.alpn,
         Libraries.typesafe
+        Libraries.boringssl,
+        Libraries.tomcat
       )
     )
 }
