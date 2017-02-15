@@ -46,7 +46,6 @@ object Dependencies {
     val gcpBigtableHBase      = "com.google.cloud.bigtable" % "bigtable-hbase-dataflow"            % V.gcpBigtable
     val hadoopCommon          = "org.apache.hadoop"         % "hadoop-common"                      % V.hadoop
     val hbaseCommon           = "org.apache.hbase"          % "hbase-common"                       % V.hbase
-    val hbaseClient           = "org.apache.hbase"          % "hbase-client"                       % V.hbase
     val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
     val alpn                  = "org.mortbay.jetty.alpn"    % "alpn-boot"                          % V.alpn
     val tomcat                = "org.apache.tomcat"         % "tomcat-jni"                         % V.tomcat
