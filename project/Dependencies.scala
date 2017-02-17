@@ -32,7 +32,7 @@ object Dependencies {
     val jodaTime             = "2.9.7"
     val alpn                 = "8.1.5.v20150921"
     val boringssl            = "1.1.33.Fork26"
-    val tomcat               = "8.0.8"
+    //val tomcat               = "8.0.8"
 	val slf4j				 = "1.7.22"
 
     // Scala
@@ -47,9 +47,10 @@ object Dependencies {
     val gcpBigtableHBase      = "com.google.cloud.bigtable"  % "bigtable-hbase-dataflow"            % V.gcpBigtable
     val hadoopCommon          = "org.apache.hadoop"          % "hadoop-common"                      % V.hadoop
     val hbaseCommon           = "org.apache.hbase"           % "hbase-common"                       % V.hbase
+    val hbaseClient           = "org.apache.hbase"           % "hbase-client"                       % V.hbase
     val typesafe              = "com.typesafe"               % "config"                             % V.typesafe
     val alpn                  = "org.mortbay.jetty.alpn"     % "alpn-boot"                          % V.alpn
-    val tomcat                = "org.apache.tomcat"          % "tomcat-jni"                         % V.tomcat
+    //val tomcat                = "org.apache.tomcat"          % "tomcat-jni"                         % V.tomcat
     val boringssl             = "io.netty"                   % "netty-tcnative-boringssl-static"    % V.boringssl
     val jodaConvert           = "org.joda"                   % "joda-convert"                       % V.jodaConvert
     val jodaTime              = "joda-time"                   % "joda-time"                          % V.jodaTime

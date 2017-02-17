@@ -71,7 +71,9 @@ object BuildSettings {
         "bigtable-protos-0.3.0.jar", //conflict grpc-core-proto-0.0.3.jar
         "datastore-v1-protos-1.0.1.jar", //conflict grpc-core-proto-0.0.3.jar
         "appengine-api-1.0-sdk-1.9.34.jar", 
-        "guava-jdk5-17.0.jar"
+        "guava-jdk5-17.0.jar",
+        "netty-all-4.0.23.Final.jar" //conflict with many netty jars imported independently
+//        "hbase-client-1.0.2.jar"        
       )
       cp filter { jar => excludes(jar.data.getName) }
     },

@@ -31,6 +31,7 @@ object DataflowStreamingExampleProjectBuild extends Build {
         Libraries.gcpBigtableHBase,
         Libraries.hadoopCommon,
         Libraries.hbaseCommon,
+        Libraries.hbaseClient,
         Libraries.argot,
         Libraries.specs2,
         Libraries.json4s,
@@ -39,8 +40,8 @@ object DataflowStreamingExampleProjectBuild extends Build {
         Libraries.boringssl,
 		Libraries.jodaConvert,
 		Libraries.jodaTime,
-		Libraries.slf4j,
-        Libraries.tomcat
+		Libraries.slf4j
+//        Libraries.tomcat
       )
     )
 }
