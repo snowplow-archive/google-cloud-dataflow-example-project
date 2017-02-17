@@ -37,6 +37,9 @@ object DataflowStreamingExampleProjectBuild extends Build {
         Libraries.alpn,
         Libraries.typesafe,
         Libraries.boringssl,
+		Libraries.jodaConvert,
+		Libraries.jodaTime,
+		Libraries.slf4j,
         Libraries.tomcat
       )
     )

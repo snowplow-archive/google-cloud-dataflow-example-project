@@ -57,8 +57,8 @@ object BigtableUtils {
   def setOrUpdateCount(bigtableConnection: Connection, tableName: String, bucketStart: String, eventType: String, createdAt: String,  updatedAt: String, count: Int){
 
     val rowInTable = getItem(bigtableConnection, tableName, bucketStart, eventType)
-    println(rowInTable)
-    if (rowInTable == null) {
+    println("row in table:" + rowInTable)
+    if (rowInTable.isEmpty) {
       BigtableUtils.putItem(bigtableConnection, tableName, bucketStart, eventType, createdAt, updatedAt, count)
     } else {
       val oldCreatedAt = new String(rowInTable.getValue("cf1".getBytes, "CreatedAt".getBytes))
@@ -92,10 +92,6 @@ object BigtableUtils {
     val tableCountColumnName = "Count".getBytes
 
     try {
-      val time = new Date().getTime - (1 * 24 * 60 * 60 * 1000)
-      val date = new Date()
-      date.setTime(time)
-      dateFormatter.setTimeZone(TimeZone.getTimeZone("UTC"))
       val table = bigtableConnection.getTable(TableName.valueOf(tableName))
       println("Adding data to " + tableName)
 

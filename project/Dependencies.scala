@@ -28,32 +28,36 @@ object Dependencies {
     val hadoop               = "2.7.3"
     val hbase                = "1.2.4"
     val typesafe             = "1.3.1"
-
-    // Scala
-    val argot                = "1.0.4"
-    // Add versions for your additional libraries here...
-    // Scala (test)
-    val specs2               = "3.3"
-    val guava                = "19.0"
-    val json4s               = "3.5.0"
+    val jodaConvert          = "1.8.1"
+    val jodaTime             = "2.9.7"
     val alpn                 = "8.1.5.v20150921"
     val boringssl            = "1.1.33.Fork26"
     val tomcat               = "8.0.8"
+	val slf4j				 = "1.7.22"
+
+    // Scala
+    val argot                = "1.0.4"
+    val specs2               = "3.3"
+    val guava                = "19.0"
+    val json4s               = "3.2.11"
   }
 
   object Libraries {
     // Java
-    val gcpBigtableHBase      = "com.google.cloud.bigtable" % "bigtable-hbase-dataflow"            % V.gcpBigtable
-    val hadoopCommon          = "org.apache.hadoop"         % "hadoop-common"                      % V.hadoop
-    val hbaseCommon           = "org.apache.hbase"          % "hbase-common"                       % V.hbase
-    val typesafe              = "com.typesafe"              % "config"                             % V.typesafe
-    val alpn                  = "org.mortbay.jetty.alpn"    % "alpn-boot"                          % V.alpn
-    val tomcat                = "org.apache.tomcat"         % "tomcat-jni"                         % V.tomcat
-    val boringssl             = "io.netty"                  % "netty-tcnative-boringssl-static"    % V.boringssl
+    val gcpBigtableHBase      = "com.google.cloud.bigtable"  % "bigtable-hbase-dataflow"            % V.gcpBigtable
+    val hadoopCommon          = "org.apache.hadoop"          % "hadoop-common"                      % V.hadoop
+    val hbaseCommon           = "org.apache.hbase"           % "hbase-common"                       % V.hbase
+    val typesafe              = "com.typesafe"               % "config"                             % V.typesafe
+    val alpn                  = "org.mortbay.jetty.alpn"     % "alpn-boot"                          % V.alpn
+    val tomcat                = "org.apache.tomcat"          % "tomcat-jni"                         % V.tomcat
+    val boringssl             = "io.netty"                   % "netty-tcnative-boringssl-static"    % V.boringssl
+    val jodaConvert           = "org.joda"                   % "joda-convert"                       % V.jodaConvert
+    val jodaTime              = "joda-time"                   % "joda-time"                          % V.jodaTime
+	val slf4j				  = "org.slf4j"					 % "slf4j-api"  						% V.slf4j
 
     // Scala
-    val argot                 = "org.clapper"               %% "argot"                             % V.argot
-    val json4s                = "org.json4s"                %% "json4s-jackson"                    % V.json4s
+    val argot                 = "org.clapper"                %% "argot"                             % V.argot
+    val json4s                = "org.json4s"                 %% "json4s-jackson"                    % V.json4s
 
     // Scala (test only)
     val specs2                = "org.specs2"       % "specs2_2.10"                  % V.specs2       % "test"

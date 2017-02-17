@@ -14,8 +14,8 @@ package com.snowplowanalytics.dataflow.streaming
 package storage
 
 // Java
-import java.util.Date
-import java.text.SimpleDateFormat
+import org.joda.time.format.DateTimeFormat
+import org.joda.time.DateTime
 
 /**
  * Object uses downsampling method to create metadata from each
@@ -36,7 +36,7 @@ import java.text.SimpleDateFormat
  */
 object BucketingStrategy {
 
-  private val BucketToMinuteFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:00.000")
+  private val BucketToMinuteFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:00.000")
 
   /**
    * Function to bucket a date based on
@@ -46,8 +46,7 @@ object BucketingStrategy {
    *
    * @param date The Java Date to bucket
    * @return the downsampled date in String
-   *         format
+   *         print
    */
-  def bucket(date: Date): String =
-    BucketToMinuteFormatter.format(date)
+  def bucket(date: DateTime): String = BucketToMinuteFormatter.print(date)
 } 

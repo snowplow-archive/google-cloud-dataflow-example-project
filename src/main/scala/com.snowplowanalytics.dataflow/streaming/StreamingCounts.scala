@@ -27,6 +27,9 @@ import java.lang.{Iterable => JIterable, Long => JLong}
 
 import scala.collection.JavaConverters._
 
+//import org.apache.log4j.Logger
+import org.apache.log4j.BasicConfigurator
+
 import org.joda.time.Duration
 
 // Dataflow
@@ -56,11 +59,6 @@ import org.apache.hadoop.hbase.client.Connection
 // This project
 import storage.BigtableUtils
 
-trait PipelineOptionsWithBigtable extends DataflowPipelineOptions {
-    def getTablename() : String
-    def setTablename(value: String) : Unit
-}
-
 object StreamingCounts {
 
   /**
@@ -69,10 +67,10 @@ object StreamingCounts {
    * @param config The configuration for our job using StreamingCountsConfig.scala
    */
   private def setupDataflowAndBigtable(config: StreamingCountsConfig): (Pipeline, CloudBigtableTableConfiguration) = {
-    PipelineOptionsFactory.register(classOf[PipelineOptionsWithBigtable])
+    PipelineOptionsFactory.register(classOf[DataflowPipelineOptions])
 
     val options = PipelineOptionsFactory
-      .as(classOf[PipelineOptionsWithBigtable])
+      .as(classOf[DataflowPipelineOptions])
 
     options.setRunner(classOf[DataflowPipelineRunner])
     options.setProject(config.projectId)
@@ -94,9 +92,10 @@ object StreamingCounts {
    * function applied in the "map" phase
    */
   def bucketEvents = new DoFn[String,KV[String,String]]() {
-    
+
+	//val LOG = Logger.getLogger("bucketEvents")
+
     override def processElement(c: DoFn[String,KV[String,String]]#ProcessContext) {
-        println(c.element)
         val e = SimpleEvent.fromJson(c.element)
         c.output(KV.of(e.bucket, e.`type`))
     }
@@ -107,18 +106,14 @@ object StreamingCounts {
    * store the counts in Bigtable
    */
 
-  class StoreEventCounts(config: CloudBigtableTableConfiguration) 
+  class StoreEventCounts(config: CloudBigtableTableConfiguration, tableName: String)
             extends PTransform[PCollection[KV[String, JIterable[String]]], PDone] {
 
-    def storeEventCounts(config: CloudBigtableTableConfiguration) = new AbstractCloudBigtableTableDoFn[KV[String,JIterable[String]], String](config) {
+    def storeEventCounts(config: CloudBigtableTableConfiguration, tableName: String) = new AbstractCloudBigtableTableDoFn[KV[String,JIterable[String]], String](config) {
 
       override def processElement(c: DoFn[KV[String,JIterable[String]], String]#ProcessContext) {
           val bucketName = c.element.getKey
-          val tableName = c
-              .getPipelineOptions
-              .as(classOf[PipelineOptionsWithBigtable])
-              .getTablename()
-
+          
           val counts = c.element.getValue.asScala.groupBy(identity).mapValues(_.size)
           for ((eventType, count) <- counts) {
               BigtableUtils.setOrUpdateCount(
@@ -136,7 +131,7 @@ object StreamingCounts {
     } 
 
     override def apply(counts : PCollection[KV[String, JIterable[String]]]) : PDone = {
-        counts.apply(ParDo.named("StoreEventCounts").of(this.storeEventCounts(config)))
+        counts.apply(ParDo.named("StoreEventCounts").of(this.storeEventCounts(config, tableName)))
         PDone.in(counts.getPipeline)
     }
   }
@@ -151,7 +146,7 @@ object StreamingCounts {
    */
   def execute(config: StreamingCountsConfig) {
     // Config Bigtable
-
+    BasicConfigurator.configure
     val (pipeline, bigtableConfig) = setupDataflowAndBigtable(config)
 
     // Map phase: derive events, determine bucket
@@ -163,7 +158,7 @@ object StreamingCounts {
     // Reduce phase: group by key(bucket) then count and store
     val bucketedEventCounts = bucketedEvents
         .apply(GroupByKey.create[String, String]())
-        .apply(new StoreEventCounts(bigtableConfig))
+        .apply(new StoreEventCounts(bigtableConfig, config.tableName))
 
     // Start Dataflow pipeline
     pipeline.run

@@ -13,8 +13,8 @@
 package com.snowplowanalytics.dataflow.streaming
 
 // Java
-import java.text.SimpleDateFormat
-import java.util.Date
+import org.joda.time.format.DateTimeFormat
+import org.joda.time.DateTime
 
 // json4s
 import org.json4s._
@@ -29,12 +29,19 @@ import storage.BucketingStrategy
  */
 object SimpleEvent {
 
-  private val format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+  private val format = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
 
   /**
    * Converts date string into Date object
    */
-  def convertStringToDate(dateString: String): Date = format.parse(dateString)
+  def convertStringToDate(dateString: String): DateTime = try {
+    format.parseDateTime(dateString)
+  } catch {
+    case e => 
+        println("DEBUG")
+        println(dateString)
+        throw e
+  }
 
   /**
    * Converts String of JSON data into SimpleEvent objects
@@ -42,7 +49,13 @@ object SimpleEvent {
   def fromJson(jsonString: String): SimpleEvent = {
     implicit val formats = DefaultFormats
     val parsed = parse(jsonString)
-    parsed.extract[SimpleEvent]
+    try {
+        parsed.extract[SimpleEvent]
+    } catch {
+        case e: MappingException => 
+        println("This caused the exception: " + jsonString)
+        throw e
+    }
   }
 
 }
