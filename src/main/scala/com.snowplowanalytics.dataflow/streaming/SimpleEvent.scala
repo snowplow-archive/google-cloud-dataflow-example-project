@@ -29,7 +29,7 @@ import storage.BucketingStrategy
  */
 object SimpleEvent {
 
-  private val format = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss")
+  private val format = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
 
   /**
    * Converts date string into Date object
