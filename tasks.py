@@ -13,12 +13,13 @@ import datetime, json, uuid, time
 from functools import partial
 from random import choice
 
-#from invoke import run, task
+from invoke import run, task
 
 from google.cloud import pubsub
+from google.cloud import bigtable
 
 
-JAR_FILE = "gcp-dataflow-example-project-0.0.0.jar"
+JAR_FILE = "target/scala-2.11/gcp-dataflow-streaming-example-project-0.1.0.jar"
 
 # Selection of EventType values
 COLORS = ['Red','Orange','Yellow','Green','Blue']
@@ -55,8 +56,8 @@ def write_event(topic):
   return event_json
 
 
-#@task
-def generate_events(topic_name):
+@task
+def generate_events(ctx, topic_name):
     """
     load demo data with python generator script for SimpleEvents
     """
@@ -70,8 +71,8 @@ def generate_events(topic_name):
         #time.sleep(5)
 
 
-#@task
-def build_project(foo):
+@task
+def build_project(ctx):
     """
     build gcp-dataflow-example-project
     and package into "fat jar" ready for Dataflow deploy
@@ -79,15 +80,25 @@ def build_project(foo):
     run("sbt assembly", pty=True)
 
 
-#@task
-def create_bigtable_table(client, region, table):
+@task
+def create_bigtable_table(ctx, region="us-west1-a", table_name="test-table", instance_id="test-instance"):
     """
-    Cloud Bigtable table creation 
+    Cloud Bigtable table (and instance) creation. Setting display_name to
+    the same as the instance_id by default. Creating column family with id="cf1"
+    by default, because that's hardcoded in the example project
+    Assuming non-existent instance!
     """
-    pass
+    client = bigtable.Client(admin=True)
+    instance = client.instance(instance_id, region, display_name=instance_id)
+    instance.create()
+    table = instance.table(table_name)
+    table.create()
+    column_family = table.column_family("cf1")
+    column_family.create()
+    
 
-#@task
-def create_pubsub_topic(topic_name):
+@task
+def create_pubsub_topic(ctx, topic_name):
     """
     create our pubsub topic
     """
@@ -98,17 +109,10 @@ def create_pubsub_topic(topic_name):
     assert topic.exists()
 
 
-#@task
-def run_project(config_path):
+@task
+def run_project(ctx, fat_jar_path=JAR_FILE, config_path):
     """
     Submits the compiled "fat jar" to Cloud Dataflow and
     starts Cloud Dataflow based on project settings
     """
-    pass
-
-#    run("./spark-master/bin/spark-submit \
-#        --class com.snowplowanalytics.spark.streaming.StreamingCountsApp \
-#        --master local[4] \
-#        ./target/scala-2.10/{} \
-#        --config {}".format(JAR_FILE, config_path),
-#        pty=True)
+    run("java -jar {} --config {}".format(fat_jar_path, config_path), pty=True)
