@@ -45,6 +45,9 @@ After enabling Pub/Sub, go to https://console.cloud.google.com/cloudpubsub?proje
 
 There, click "Create Topic" and type in whatever name you want to give to the topic we'll be using to read the events from. In our example, we used "test-topic". Keep track of your topic's name (you can always go to that URL to check it), as it will be needed when you're creating your config file.
 
+![creating a pubsub topic][create-topic]
+
+
 #### Dataflow
 
 Make sure the Dataflow API is enabled. The next thing you'll need to do is creating a staging location in which the system will store the jars ran by the workers. To do this, you need to enable the Storage API.
@@ -59,6 +62,12 @@ Your staging location will be:
 gs://your-bucket-name/the-folder-that-you-might-have-created
 ```
 
+![setting staging location][bucket1]
+
+![setting staging location][bucket2]
+
+
+
 #### Bigtable
 
 After enabling Bigtable, we'll need to create an instance where our table will be stored. And then create the actual table.
@@ -66,6 +75,10 @@ After enabling Bigtable, we'll need to create an instance where our table will b
 ##### Creating an instance
 
 Go to https://console.cloud.google.com/bigtable/instances?project=YOUR-PROJECT-ID , again taking care to change it with your project id. Click "Create instance" and fill the appropriate details. The name is, again, important. We used "test-instance" in our example. We suggest you to select HDD as a storage type as it is much cheaper, and this is for test-purposes only.
+                  
+|                                            |                                            |
+|:------------------------------------------:|:------------------------------------------:|
+| ![creating a bigtable instance][bigtable1] | ![creating a bigtable instance][bigtable2] |
 
 ##### Creating a table
 
@@ -132,6 +145,8 @@ If you didn't get any Java stack traces in the output of the previous command, t
 
 The first place is the Dataflow's web interface. Go to https://console.cloud.google.com/dataflow?project=YOUR-PROJECT-ID and select the job you just submitted. You should then see a graph with the several transforms that make up our data pipeline. You can click on the transforms to get specific info about each one, like their throughput. If something is not working properly, you'll get warnings under "Logs". You can also check the central log in: https://console.cloud.google.com/logs?project=YOUR-PROJECT-ID
 
+![running job on dataflow][dataflow]
+
 The second place you'll want to check is your Bigtable table. To do so, as we described before, run the following command inside the HBase shell on your Google Cloud Shell (assuming your table is called "test-table"):
 
 ```
@@ -140,10 +155,24 @@ hbase-shell> scan "test-table"
 
 This will print the several rows in the table, which correspond to the counts of a specific type of event in a specific time-bucket.
 
+![bigtable table rows][result]
+
 
 ### 5. Cleaning Up
 
-To avoid unwanted spendings, you'll want to bring your resources down. The easiest way to do it, is to just delete the project you've been working on. To do so, go [here](https://console.cloud.google.com/iam-admin/projects), select the project and click "Delete Project".
+These steps will stop your job execution:
+
+- Click "Stop Job" on Dataflow's menu, under "Job Status", on the right sidebar. Then select "Cancel".
+- Kill the event generator (Ctrl+C on the corresponding terminal window)
+- On Google Cloud Shell, inside the HBase shell, run:
+
+```bash
+hbase-shell> disable "test-table"
+hbase-shell> drop "test-table"
+```
+
+
+To avoid unwanted spendings, you'll also want to bring your resources down. The easiest way to do it, is to just delete the project you've been working on. To do so, go [here](https://console.cloud.google.com/iam-admin/projects), select the project and click "Delete Project".
 
 
 ## Copyright and license
@@ -158,3 +187,11 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+[create-topic]: screenshots/create-topic.png
+[bucket1]: screenshots/bucket1.png
+[bucket2]: screenshots/bucket2.png
+[bigtable1]: screenshots/bigtable1.png
+[bigtable2]: screenshots/bigtable2.png
+[dataflow]: screenshots/dataflow.png
+[result]: screenshots/result.png
