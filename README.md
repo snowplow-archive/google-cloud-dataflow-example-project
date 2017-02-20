@@ -2,17 +2,19 @@
 
 ## Introduction
 
-This is a simple time series analysis stream processing job ([introductory blog post] [blog-post]) written in Scala for the [Spark Streaming] [spark-streaming] cluster computing platform, processing JSON events from [Amazon Kinesis] [kinesis] and writing aggregates to [Amazon DynamoDB] [dynamodb].
+This is a simple stream processing example project, written in Scala and using Google Cloud Platform's services/APIs:
 
-This was built by the Data Science team at [Snowplow Analytics] [snowplow], who use Spark Streaming in their client projects.
+- Dataflow for data processing
+- Pub/Sub for communication
+- Bigtable for storage
 
-**Running this requires an Amazon AWS account, and it will incur charges.**
+**Running this requires a Google account and enabling GCP services, which will incur in certain costs**
 
-_See also:_ [Spark Example Project] [spark-example-project] | [AWS Lambda Example Project] [aws-lambda-example-project]
+We assume you have [pyinvoke](http://www.pyinvoke.org/) installed, as well as the [Google Cloud Python SDK](https://pypi.python.org/pypi/google-cloud), in order for the helper script to work.
 
 ## Overview
 
-We have implemented a super-simple analytics-on-write stream processing job using Spark Streaming. Our Spark Streaming job reads a Kinesis stream containing events in a JSON format:
+We have implemented a super-simple analytics-on-write stream processing job using Dataflow. Our Dataflow job reads a Pub/Sub topic containing events in a JSON format:
 
 ```json
 {
@@ -22,142 +24,126 @@ We have implemented a super-simple analytics-on-write stream processing job usin
 }
 ```
 
-Our job counts the events by `type` and aggregates these counts into 1 minute buckets. The job then takes these aggregates and saves them into a table in DynamoDB:
-
-![dynamodb-table-image][dynamodb-table-image]
-
-## Developer Quickstart
-
-Assuming git, [Vagrant] [vagrant-install] and [VirtualBox] [virtualbox-install] installed:
-
-```bash
- host$ git clone https://github.com/snowplow/spark-streaming-example-project.git
- host$ cd spark-streaming-example-project
- host$ vagrant up && vagrant ssh
-guest$ cd /vagrant
-guest$ sbt compile
-```
+Our job counts the events by `type` and aggregates these counts into 1 minute buckets. The job then takes these aggregates and saves them into a table in Bigtable.
 
 ## Tutorial
 
-You can follow along in [the release blog post] [blog-post] to get the project up and running yourself.
 
-The below steps assume that you are running inside Vagrant, as per the Developer Quickstart above.
+### 1. Setting up GCP
 
-### 1. Setting up AWS
+First we need to create and setup a GCP project. To do so, you can follow [this guide on Snowplow's wiki](https://github.com/snowplow/snowplow/wiki/GCP:-Getting-Started). Following those instructions, you'll need to enable the following APIs/services:
 
-First we need to configure a default AWS profile:
+- Dataflow
+- Bigtable
+- Cloud Pub/Sub
 
-```bash
-$ aws configure
-AWS Access Key ID [None]: ...
-AWS Secret Access Key [None]: ...
-Default region name [None]: us-east-1
-Default output format [None]: json
-```
+Note: some of the following tasks can be performed using the helper script provided in this repo. However, at some important steps the script assumes default configurations, which might not be the right ones for you. For example, when creating a bigtable instance and table, the script will choose SSD storage over HDD, which is much more expensive. Run ``` $ inv --list ``` on the repo root to list the available actions on the script. 
 
-Now we create our Kinesis event stream:
+#### Cloud Pub/Sub
 
-```bash
-$ inv create_kinesis_stream default my-stream
-```
+After enabling Pub/Sub, go to https://console.cloud.google.com/cloudpubsub?project=YOUR-PROJECT-ID . Note that you have to change *YOUR-PROJECT-ID* to, you guessed it, your project id.
 
-Wait a minute and then:
+There, click "Create Topic" and type in whatever name you want to give to the topic we'll be using to read the events from. In our example, we used "test-topic". Keep track of your topic's name (you can always go to that URL to check it), as it will be needed when you're creating your config file.
 
-```bash
-$ inv describe_kinesis_stream default my-stream
-{
-    "StreamDescription": {
-        "StreamStatus": "ACTIVE",
-        "StreamName": "my-stream",
-        "StreamARN": "arn:aws:kinesis:us-east-1:719197435995:stream/my-stream",
-        "Shards": [
-            {
-                "ShardId": "shardId-000000000000",
-                "HashKeyRange": {
-                    "EndingHashKey": "340282366920938463463374607431768211455",
-                    "StartingHashKey": "0"
-                },
-                "SequenceNumberRange": {
-                    "StartingSequenceNumber": "49551350243544458458477304430170758137221526998466166786"
-                }
-            }
-        ]
-    }
-}
-```
+#### Dataflow
 
-If the Kinesis response says that the stream is still being created, wait a minute and then try again.
+Make sure the Dataflow API is enabled. The next thing you'll need to do is creating a staging location in which the system will store the jars ran by the workers. To do this, you need to enable the Storage API.
 
-Now create our DynamoDB table:
+After that, go to https://console.cloud.google.com/storage/browser?project=YOUR-PROJECT-ID . Click "Create Bucket". Fill in the appropriate details. As this is an example project, we suggest you pick the cheapest option.
+
+After creating your bucket, you might want to create a folder inside it, to serve as your staging location. You can also just use the bucket's root. To create a folder in your bucket, after you created the bucket, selected it in the list and then click "Create Folder".
+
+Your staging location will be:
 
 ```bash
-$ inv create_dynamodb_table default us-east-1 my-table
+gs://your-bucket-name/the-folder-that-you-might-have-created
 ```
 
-### 2. Sending events to Kinesis
+#### Bigtable
 
-We need to start sending events to our new Kinesis stream. We have created a helper method to do this - run the below and leave it running: 
+After enabling Bigtable, we'll need to create an instance where our table will be stored. And then create the actual table.
+
+##### Creating an instance
+
+Go to https://console.cloud.google.com/bigtable/instances?project=YOUR-PROJECT-ID , again taking care to change it with your project id. Click "Create instance" and fill the appropriate details. The name is, again, important. We used "test-instance" in our example. We suggest you to select HDD as a storage type as it is much cheaper, and this is for test-purposes only.
+
+##### Creating a table
+
+We usually do this through an HBase shell inside Google Cloud Shell ([reference](https://cloud.google.com/bigtable/docs/quickstart-hbase)).  
+
+Go to your Google Cloud Dashboard (https://console.cloud.google.com/home/dashboard?project=YOUR-PROJECT-ID) and click on the little terminal symbol on the top right corner. That will boot your Google Shell. Wait a bit and then run the following commands:
 
 ```bash
-$ inv generate_events default us-east-1 my-stream
-Event sent to Kinesis: {"timestamp": "2015-06-05T12:54:43.064528", "type": "Green", "id": "4ec80fb1-0963-4e35-8f54-ce760499d974"}
-Event sent to Kinesis: {"timestamp": "2015-06-05T12:54:43.757797", "type": "Red", "id": "eb84b0d1-f793-4213-8a65-2fb09eab8c5c"}
-Event sent to Kinesis: {"timestamp": "2015-06-05T12:54:44.295972", "type": "Yellow", "id": "4654bdc8-86d4-44a3-9920-fee7939e2582"}
-...
+$  curl -f -O https://storage.googleapis.com/cloud-bigtable/quickstart/GoogleCloudBigtable-Quickstart-0.9.5.1.zip
+$ unzip GoogleCloudBigtable-Quickstart-0.9.5.1.zip
+$ cd quickstart
+$ ./quickstart.sh
 ```
 
-Now open up a separate terminal for the rest of the setup.
+This will boot the HBase shell. Then do the following (where "test-table" is the name we selected for our example - you can change it to whatever you want, and "cf1" is the column family we hard-coded in our example project - you can't change it, in the context of this example project:
 
-### 3. Running our job on Spark Streaming
+```
+hbase-shell> create "test-table", "cf1"
+```
 
-First we need to build Spark Streaming with Kinesis support. This can take up to 90 minutes:
+To see the data written in the table, later, you'll run the following command (again, inside the HBase shell):
+
+```
+hbase-shell> scan "test-table"
+```
+
+### 2. Sending events to Pub/Sub
+
+At this step, we assume you already created a Cloud Pub/Sub topic, either via the web interface or the helper script we provide in this repo. In our case, the topic is called "test-topic".
+
+To start the event generator, simply run the following command, on the repo's root:
 
 ```bash
-$ inv build_spark
-...
-[INFO] Spark Kinesis Integration ......................... SUCCESS [1:11.115s]
-...
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time: 1:29:00.686s
-[INFO] Finished at: Sun Jun 07 00:32:09 UTC 2015
-[INFO] Final Memory: 94M/665M
-[INFO] ------------------------------------------------------------------------
+$ inv generate_events --topic-name=test-topic
 ```
 
-Now we build our application. This should take closer to 10 minutes:
+This will run an infinite loop, continuously publishing randomly generated events to our Pub/Sub topic. To stop it, Ctrl+C .
+
+### 3. Running our job on Dataflow
+
+You can either download a 'fat-jar' assembled by us, or build it yourself (if you have Scala and SBT installed).
+
+To build it, run ```$ sbt assembly```, on the repo root.
+
+You can then either enter SBT's REPL and run it from there, doing: 
 
 ```bash
-$ inv build_project
-...
+sbt-repl> run --config /path/to/config/file.hocon
 ```
 
-Finally we can submit our job to Spark with this command:
+Or you can use the helper script, from the repo root:
 
 ```bash
-$ inv run_project config/config.hocon.sample
-...
+$ inv run_project --config=/path/to/config/file.hocon
 ```
 
-If you have updated any of the configuration options above (e.g. stream name or region), then you will have to update the `config.hocon.sample` file accordingly.
+There's an example config file in config/config.hocon.sample . If you've been using the same names as we did, you'll only need to perform some minimal changes (namely: the project ID; adjusting the Pub/Sub topic full name; setting Dataflow's correct staging location)
+
+
 
 ### 4. Monitoring your job
 
-First review the spooling output of the `run_project` command above - it's very verbose, but if you don't see any Java stack traces in there, then Spark Streaming should be running okay.
+If you didn't get any Java stack traces in the output of the previous command, the Dataflow job has been properly submitted. Now there are 2 places we want to check to see if everything is running smoothly.
 
-Now head over to your host machine's [localhost:4040] [localhost-4040] and you should see something like this:
+The first place is the Dataflow's web interface. Go to https://console.cloud.google.com/dataflow?project=YOUR-PROJECT-ID and select the job you just submitted. You should then see a graph with the several transforms that make up our data pipeline. You can click on the transforms to get specific info about each one, like their throughput. If something is not working properly, you'll get warnings under "Logs". You can also check the central log in: https://console.cloud.google.com/logs?project=YOUR-PROJECT-ID
 
-![spark-ui-image][spark-ui-image]
+The second place you'll want to check is your Bigtable table. To do so, as we described before, run the following command inside the HBase shell on your Google Cloud Shell (assuming your table is called "test-table"):
 
-You can see how our Spark Streaming job _discretizes_ the Kinesis event stream into 2-second-duration "micro-batches", which are each then processed as a discrete Spark job.
+```
+hbase-shell> scan "test-table"
+```
 
-Finally, let's check the data in our DynamoDB table. Make sure you are in the correct AWS region, then click on `my-table` and hit the `Explore Table` button:
+This will print the several rows in the table, which correspond to the counts of a specific type of event in a specific time-bucket.
 
-![dynamodb-table-image][dynamodb-table-image]
 
-For each **BucketStart** and **EventType** pair, we see a **Count**, plus some **CreatedAt** and **UpdatedAt** metadata for debugging purposes. Our bucket size is 1 minute, and we have 5 discrete event types, hence the matrix of rows that we see.
+### 5. Cleaning Up
+
+To avoid unwanted spendings, you'll want to bring your resources down. The easiest way to do it, is to just delete the project you've been working on. To do so, go [here](https://console.cloud.google.com/iam-admin/projects), select the project and click "Delete Project".
 
 
 ## Copyright and license
@@ -172,31 +158,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-[travis]: https://travis-ci.org/snowplow/spark-streaming-example-project
-[travis-image]: https://travis-ci.org/snowplow/spark-streaming-example-project.png?branch=master
-[license-image]: http://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
-[license]: http://www.apache.org/licenses/LICENSE-2.0
-[release-image]: http://img.shields.io/badge/release-0.1.0-blue.svg?style=flat
-[releases]: https://github.com/snowplow/spark-streaming-example-project/releases
-
-[blog-post]: http://snowplowanalytics.com/blog/2015/06/10/spark-streaming-example-project-0.1.0-released/
-
-[dynamodb-table-image]: /docs/dynamodb-table-image.png?raw=true
-[spark-ui-image]: /docs/spark-ui-image.png?raw=true
-
-[spark-streaming]: https://spark.apache.org/streaming/
-[kinesis]: http://aws.amazon.com/kinesis
-[dynamodb]: http://aws.amazon.com/dynamodb
-[snowplow]: http://snowplowanalytics.com
-[icebucket]: https://github.com/snowplow/icebucket
-
-[vagrant-install]: http://docs.vagrantup.com/v2/installation/index.html
-[virtualbox-install]: https://www.virtualbox.org/wiki/Downloads
-
-[spark-example-project]: https://github.com/snowplow/spark-example-project
-[aws-lambda-example-project]: https://github.com/snowplow/aws-lambda-example-project
-
-[localhost-4040]: http://localhost:4040/
-
-[020-milestone]: https://github.com/snowplow/spark-streaming-example-project/milestones/Version%200.2.0

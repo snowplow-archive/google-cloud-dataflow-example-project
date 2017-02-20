@@ -59,7 +59,7 @@ def write_event(topic):
 @task
 def generate_events(ctx, topic_name):
     """
-    load demo data with python generator script for SimpleEvents
+    Load demo data with python generator script for SimpleEvents
     """
     client = pubsub.Client()
     topic = client.topic(topic_name)
@@ -74,8 +74,7 @@ def generate_events(ctx, topic_name):
 @task
 def build_project(ctx):
     """
-    build gcp-dataflow-example-project
-    and package into "fat jar" ready for Dataflow deploy
+    Build gcp-dataflow-example-project and package into "fat jar" ready for Dataflow deploy
     """
     run("sbt assembly", pty=True)
 
@@ -83,10 +82,9 @@ def build_project(ctx):
 @task
 def create_bigtable_table(ctx, region="us-west1-a", table_name="test-table", instance_id="test-instance"):
     """
-    Cloud Bigtable table (and instance) creation. Setting display_name to
-    the same as the instance_id by default. Creating column family with id="cf1"
-    by default, because that's hardcoded in the example project
-    Assuming non-existent instance!
+    Cloud Bigtable table (and instance) creation. Check the full docstring for details!
+	Setting display_name to the same as the instance_id by default. Creating column family with id="cf1"
+    by default, because that's hardcoded in the example project. Assuming non-existent instance!
     """
     client = bigtable.Client(admin=True)
     instance = client.instance(instance_id, region, display_name=instance_id)
@@ -100,7 +98,7 @@ def create_bigtable_table(ctx, region="us-west1-a", table_name="test-table", ins
 @task
 def create_pubsub_topic(ctx, topic_name):
     """
-    create our pubsub topic
+    Create our pubsub topic
     """
     client = pubsub.Client()
     topic = client.topic(topic_name)
@@ -110,9 +108,8 @@ def create_pubsub_topic(ctx, topic_name):
 
 
 @task
-def run_project(ctx, fat_jar_path=JAR_FILE, config_path):
+def run_project(ctx, config, fat_jar_path=JAR_FILE):
     """
-    Submits the compiled "fat jar" to Cloud Dataflow and
-    starts Cloud Dataflow based on project settings
+    Submits the compiled "fat jar" to Cloud Dataflow and starts Cloud Dataflow based on project settings
     """
-    run("java -jar {} --config {}".format(fat_jar_path, config_path), pty=True)
+    run("java -jar {} --config {}".format(fat_jar_path, config), pty=True)
