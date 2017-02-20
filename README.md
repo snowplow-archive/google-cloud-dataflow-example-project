@@ -195,3 +195,4 @@ limitations under the License.
 [bigtable2]: screenshots/bigtable2.png
 [dataflow]: screenshots/dataflow.png
 [result]: screenshots/result.png
+[license]: LICENSE-2.0.txt
