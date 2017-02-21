@@ -1,10 +1,10 @@
 language: scala
 scala:
-	- 2.11.8
+  - 2.11.8
 jdk:
-	- oraclejdk8
+  - oraclejdk8
 script:
-	- sbt assembly
+  - sbt test
 deploy:
   skip_cleanup: true
   provider: script
