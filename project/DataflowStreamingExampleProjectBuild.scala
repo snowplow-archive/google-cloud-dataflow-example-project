@@ -24,7 +24,7 @@ object DataflowStreamingExampleProjectBuild extends Build {
   }
 
   // Define our project, with basic project information and library dependencies
-  lazy val project = Project("gcp-dataflow-streaming-example-project", file("."))
+  lazy val project = Project("google-cloud-dataflow-example-project", file("."))
     .settings(buildSettings: _*)
     .settings(
       libraryDependencies ++= Seq(
