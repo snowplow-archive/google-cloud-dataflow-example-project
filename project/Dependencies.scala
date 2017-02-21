@@ -37,7 +37,7 @@ object Dependencies {
 
     // Scala
     val argot                = "1.0.4"
-    val specs2               = "3.8.8"
+    val specs2               = "3.7"
     val guava                = "19.0"
     val json4s               = "3.2.11"
   }
