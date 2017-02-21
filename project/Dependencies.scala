@@ -37,7 +37,7 @@ object Dependencies {
 
     // Scala
     val argot                = "1.0.4"
-    val specs2               = "3.3"
+    val specs2               = "3.8.8"
     val guava                = "19.0"
     val json4s               = "3.2.11"
   }
@@ -61,7 +61,7 @@ object Dependencies {
     val json4s                = "org.json4s"                 %% "json4s-jackson"                    % V.json4s
 
     // Scala (test only)
-    val specs2                = "org.specs2"       % "specs2_2.10"                  % V.specs2       % "test"
+    val specs2                = "org.specs2"       % "specs2_2.11"                  % V.specs2       % "test"
     val guava                 = "com.google.guava" % "guava"                        % V.guava        % "test"
 
     // Add additional libraries from mvnrepository.com (SBT syntax) here...
