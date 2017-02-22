@@ -8,11 +8,7 @@ script:
 deploy:
   skip_cleanup: true
   provider: script
-  script: ./.travis/deploy.sh $TRAVIS_TAG
-  on:
-    condition: '"${TRAVIS_SCALA_VERSION}" == "2.11.8" && "${TRAVIS_JDK_VERSION}" ==
-      "oraclejdk8"'
-    tags: true
+  script: release-manager --config ./.travis/release.yml --check-version --make-version --make-artifact --upload-artifactkk
 env:
   global:
   - secure: iweewr0TXFsT94GoL4yrtouh5G8isN8XCg81RO6FuX+GiLQz0XcMZNnHTef0ihCJ/LWW01U2+zNTCUlyWkr3ksnVBQS5ql7zAnLf00gtGcPM4I6OSPRkX7ffUArXVVMXJgSZxRtljPFR5PRdUKcwZ++OuIR1BkA4GxyMQITK4io1ZNy2qXjX/WlCQ3w0YikEWI+r5jQdc/2wxvzJU602EYQ/1x0sp+lBngEVHTp8Y7RoFlYy2l7VO1OR4ZzYaAp4cfx9+vn8Hb6e6mkFBNh1z2KvE4fhCezUjwI1CFvWxzCqhOhv4sfJ8GK4xqVQR3Z+pZK6/Wii6ieibWxIawE6BgiGlwOX3iCjv742Tu5q9VxtxCavl0NpvDs2WrsrYf6QNIS2O8P4DPPPsnzdo0uruAGkhWHFqmJ5ddquZJq9IBK9P7Tzp+epDyFpNklzc455rDGwTuiA6hAjf4L/IW1htgZY/ymlzY0R0/v101KF9v3OT0iL24O4raGquSUnI04/xlfxwAtGj359DJsIx5tq2X4i3ujU/4yeHNAR5G95cj6ryjekvC88IDgjSklVkN8WKThr5B/G5GgBDDg1PhuJciT+MX7pgaSvN1uu//xDoeA9dBfOvK5OHs4Te0xm9knAjnes/WFhpFtWKcr8jKk84t3Gt0QZUqwIJ77iUr0vgRU=
