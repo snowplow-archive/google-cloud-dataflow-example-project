@@ -18,7 +18,7 @@ object BuildSettings {
   // Basic settings for our app
   lazy val basicSettings = Seq[Setting[_]](
     organization  := "com.snowplowanalytics",
-    version       := "0.1.0",
+    version       := "0.1.0-rc1",
     description   := "A Dataflow streaming job reading events from Cloud Pub/Sub and writing event counts to Bigtable",
     scalaVersion  := "2.11.8",
     scalacOptions :=  Seq("-deprecation", "-encoding", "utf8",
