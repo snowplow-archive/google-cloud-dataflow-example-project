@@ -1,5 +1,3 @@
-sbt_version_cmd : sbt version -Dsbt.log.noformat=true | awk 'END{print}' | sed -r 's/\[info\]\s(.*)/\1/' | xargs echo -n
-
 # Required: local settings
 local:
   root_dir : <%= ENV['TRAVIS_BUILD_DIR'] %>
@@ -29,7 +27,11 @@ packages:
 
     # Required IF '--check-version' is passed: will assert that
     # both versions are the same
-    build_version : <%= CMD['{{ sbt_version_cmd }}'] %>
+    build_version : <%= FUNC['sbt_version(.)'] %>
+    
+    build_commands:
+      - sbt assembly
+        
 
     # Required: Artifact
     artifacts:
