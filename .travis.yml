@@ -1,0 +1,19 @@
+language: scala
+scala:
+  - 2.11.8
+jdk:
+  - oraclejdk8
+script:
+  - sbt test
+before_deploy:
+  - pip install --user release-manager==0.2.0
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: release-manager --config ./.travis/release.yml --check-version --make-version --make-artifact --upload-artifact
+  on:
+    tags: true
+env:
+  global:
+  - secure: iweewr0TXFsT94GoL4yrtouh5G8isN8XCg81RO6FuX+GiLQz0XcMZNnHTef0ihCJ/LWW01U2+zNTCUlyWkr3ksnVBQS5ql7zAnLf00gtGcPM4I6OSPRkX7ffUArXVVMXJgSZxRtljPFR5PRdUKcwZ++OuIR1BkA4GxyMQITK4io1ZNy2qXjX/WlCQ3w0YikEWI+r5jQdc/2wxvzJU602EYQ/1x0sp+lBngEVHTp8Y7RoFlYy2l7VO1OR4ZzYaAp4cfx9+vn8Hb6e6mkFBNh1z2KvE4fhCezUjwI1CFvWxzCqhOhv4sfJ8GK4xqVQR3Z+pZK6/Wii6ieibWxIawE6BgiGlwOX3iCjv742Tu5q9VxtxCavl0NpvDs2WrsrYf6QNIS2O8P4DPPPsnzdo0uruAGkhWHFqmJ5ddquZJq9IBK9P7Tzp+epDyFpNklzc455rDGwTuiA6hAjf4L/IW1htgZY/ymlzY0R0/v101KF9v3OT0iL24O4raGquSUnI04/xlfxwAtGj359DJsIx5tq2X4i3ujU/4yeHNAR5G95cj6ryjekvC88IDgjSklVkN8WKThr5B/G5GgBDDg1PhuJciT+MX7pgaSvN1uu//xDoeA9dBfOvK5OHs4Te0xm9knAjnes/WFhpFtWKcr8jKk84t3Gt0QZUqwIJ77iUr0vgRU=
+  - secure: oWWtby3GzlvicgnRzK7RXxjP0Cbwt5zHZi7FH/00Rl120n2KrdkrBPisKXPQ0/laoKur2BfuxQ0skVsYuxMWkQEzbr7MEXnXfns0oVbM9QLzFIyRJhetawvq4+M01p4LyUcw/hsQPqGY/Kkkz/OlepbGWok3QYP4bfwBxCKJopGR0AdGqX8Y0didyzn5YXrTWobfXUVht/ke/TEsxHLV97jdJJvLcUARgbKO91/saZoDRE+bvIQzlUpBOkeZTBb3aVgZ0mxSl9WoGgWZlSHc7EF7NzL/hB91b4vigqT9TygS+D0fwAw2T5MJej/htL4EQtn8EqwLlwBC5uFKshMMgKznF4nnxyVGay2Fh5ofMwQ7E8wVxtRr9fZPk6Z651CRmeM4cZ8+T3V7d4sbFo9uGEV/Frh0kvcDGVQgI7VGk4KPtxOGE0eaWedcT5WbN+nehogg6YB19cHncH0j0Dg08rdpagvEKy2Gbq5L7+R479UGTR600X2xNs6L4eMJokadnUVUAWWUTcLIrVoKuXszWGqyits9+F+Fe78XgA2h0vSP2yUx3vaU1UFbPgFM/fnhf8btV93Jdev6pZpb3zJLU4tN/uIsPSbC137AW+hoGFkI5DWE8J7XCWR7bXKwtHyroyK5mnKXrmpW3u4WSeJFguSOwE69Wvq5edq+hiqrojM=
