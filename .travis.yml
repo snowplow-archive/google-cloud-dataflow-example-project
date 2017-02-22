@@ -5,6 +5,8 @@ jdk:
 - oraclejdk8
 script:
 - sbt test
+before_deploy:
+- pip install --user release-manager==0.2.0
 deploy:
   skip_cleanup: true
   provider: script
