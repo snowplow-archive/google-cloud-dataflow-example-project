@@ -1,0 +1,23 @@
+####################################################
+#            Sample configuration for              #
+# google-cloud-dataflow-streaming-example-project  #
+####################################################
+
+googlecloud {
+  projectId: "engineering-sandbox"
+}
+
+bigtable {
+  instanceId: "test-instance"
+  tableName: "test-table"
+  columnFamily: "cf1"
+}
+
+dataflow {
+  stagingLocation: "gs://staging-dataflow-example-project/staging"
+}
+
+# in the form: projects/<project_id>/topics/<topic_name>
+cloudpubsub {
+  topic: "projects/engineering-sandbox/topics/test-topic"
+}
